@@ -94,6 +94,17 @@ function ChatInterface() {
   const [userHistory, setUserHistory] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  const handleCopy = async (content) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(content);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   const [selectedModel, setSelectedModel] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -390,6 +401,14 @@ function ChatInterface() {
           <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
             {messages.map((message) => (
               <div key={message.id} className={`message ${message.type}`}>
+                {message.type === "assistant" && (
+                  <button 
+                    className={`copy-btn ${copiedMessageId === message.content ? 'copied' : ''}`}
+                    onClick={() => handleCopy(message.content)}
+                  >
+                    {copiedMessageId === message.content ? '✓ Copied' : 'Copy'}
+                  </button>
+                )}
                 {message.type === "assistant" && message.language && message.language !== "plaintext" ? (
                   <SyntaxHighlighter
                     language={message.language.toLowerCase()}
