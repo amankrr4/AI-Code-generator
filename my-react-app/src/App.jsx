@@ -111,6 +111,7 @@ function ChatInterface() {
   const [hasLanguageOptionsOpened, setHasLanguageOptionsOpened] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [chatBarPosition, setChatBarPosition] = useState("center");
 
   // Dynamic API URL configuration
   const getApiUrl = () => {
@@ -195,9 +196,6 @@ function ChatInterface() {
     }
   }, []);
 
-
-
-
   useEffect(() => {
     if (showModelOptions) {
       const timer = setTimeout(() => setHasModelOptionsOpened(true), 10);
@@ -252,51 +250,36 @@ function ChatInterface() {
   };
 
   const sendMessage = async () => {
-    const text = inputValue.trim();
-    if (!text) return;
-    if (!selectedModel) {
-      addMessage("⚠️ Please select a model first.", "assistant");
-      return;
-    }
-    if (selectedModel === "Ollama-Local" && !selectedOllamaModel) {
-      addMessage("⚠️ Please select an Ollama model.", "assistant");
-      return;
-    }
-    if (selectedModel !== "Ollama-Local" && (!apiKey || apiKey.trim().length < 10)) {
-      addMessage("⚠️ Please enter a valid API key.", "assistant");
-      return;
-    }
-    addMessage(text, "user");
-    setInputValue("");
-    setLoading(true);
-    try {
-      const modelToUse = selectedModel === "Ollama-Local" ? selectedOllamaModel : selectedModel;
-      const res = await fetch(`${getApiUrl()}/api/chat`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: text, language: selectedLanguage, model: modelToUse,
-          apiKey: selectedModel !== "Ollama-Local" ? apiKey : null,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data?.response) {
-        addMessage(data.response, "assistant", data.language || "plaintext");
-      } else {
-        addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext");
+    if (inputValue.trim()) {
+      setChatBarPosition("bottom");
+      addMessage(inputValue, "user"); // Add user message immediately
+      setInputValue(""); // Clear input field
+      setLoading(true); // Show loading indicator
+      try {
+        const modelToUse = selectedModel === "Ollama-Local" ? selectedOllamaModel : selectedModel;
+        const res = await fetch(`${getApiUrl()}/api/chat`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: inputValue, language: selectedLanguage, model: modelToUse,
+            apiKey: selectedModel !== "Ollama-Local" ? apiKey : null,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data?.response) {
+          addMessage(data.response, "assistant", data.language || "plaintext");
+        } else {
+          addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext");
+        }
+      } catch (err) {
+        console.error("Chat error:", err);
+        let errorMessage = "⚠️ Error contacting backend";
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          errorMessage = "⚠️ Network error - please check your internet connection";
+        }
+        addMessage(errorMessage, "assistant", "plaintext");
+      } finally {
+        setLoading(false); // Hide loading indicator
       }
-    } catch (err) {
-      console.error("Chat error:", err);
-      let errorMessage = "⚠️ Error contacting backend";
-      
-      if (err.name === 'TypeError' && err.message.includes('fetch')) {
-        errorMessage = "⚠️ Cannot connect to backend. Please check if the server is running.";
-      } else if (err.message) {
-        errorMessage = `⚠️ ${err.message}`;
-      }
-      
-      addMessage(errorMessage, "assistant", "plaintext");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -320,6 +303,17 @@ function ChatInterface() {
     }
     setShowSelector(false);
   };
+
+  useEffect(() => {
+    const handleInteraction = (e) => {
+      if (chatBarPosition === "center" && e.target.classList.contains("send-btn")) {
+        setChatBarPosition("bottom");
+      }
+    };
+
+    document.addEventListener("click", handleInteraction);
+    return () => document.removeEventListener("click", handleInteraction);
+  }, [chatBarPosition]);
 
   return (
     <div className="app-container">
@@ -392,8 +386,8 @@ function ChatInterface() {
           </div>
         </div>
 
-        <div className="chat-scroll-area" ref={chatScrollAreaRef}>
-          <div className="chat-container" ref={chatContainerRef}>
+        <div className="chat-scroll-area" ref={chatScrollAreaRef} style={{ overflowY: 'auto', maxHeight: 'calc(100% - 80px)' }}>
+          <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
             {messages.map((message) => (
               <div key={message.id} className={`message ${message.type}`}>
                 {message.type === "assistant" && message.language && message.language !== "plaintext" ? (
@@ -420,7 +414,7 @@ function ChatInterface() {
           </div>
         </div>
 
-        <div className="input-container">
+        <div className={`input-container chat-bar ${chatBarPosition === "center" ? "center" : "bottom"}`} style={{ border: 'none', boxShadow: 'none' }}>
           <div className="input-wrapper">
             <textarea
               ref={textareaRef} rows={1} className="message-input" placeholder="Ask anything..."

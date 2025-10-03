@@ -259,6 +259,19 @@ Rules:
     }
 });
 
+// ================== User State Endpoint ==================
+app.post("/api/user-state", (req, res) => {
+    const { action } = req.body;
+
+    if (action === "enter") {
+        res.json({ state: "center" });
+    } else if (action === "send") {
+        res.json({ state: "bottom" });
+    } else {
+        res.status(400).json({ error: "Invalid action" });
+    }
+});
+
 // Health check
 app.get("/health", (req, res) => {
     res.json({ 
