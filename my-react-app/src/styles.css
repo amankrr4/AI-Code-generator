@@ -12,10 +12,10 @@
   --text-primary: #ffffff;
   --text-secondary: #b0b0b0;
   --accent: #10a37f;
-  --user-msg-bg: #096d12;
-  --ai-msg-bg: #2a2a2a;
+  --user-msg-bg: #106c18;
+  --ai-msg-bg: #181818;
   --border-color: #3a3a3a;
-  --hover-bg: #292929;
+  --hover-bg: #171717;
 }
 
 body {
