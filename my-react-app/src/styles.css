@@ -81,24 +81,33 @@ body {
   padding-right: 6px;
 }
 
-.chat-history .message {
-  display: block;
-  max-width: 100%;
-  padding: 6px 10px;
-  border-radius: 6px;
+.history-session {
+  display: flex;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.history-session:hover {
+  background: var(--hover-bg);
+  transform: translateX(4px);
+}
+
+.history-session.active {
+  border-color: var(--accent);
+  background: var(--hover-bg);
+}
+
+.session-title {
   font-size: 13px;
-  background: var(--user-msg-bg);
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
-  transition: background-color 0.25s ease, transform 0.25s ease;
-}
-
-.chat-history .message:hover {
-  background: var(--bg-secondary);
-  transform: scale(1.03);
 }
 
 /* Main Content */

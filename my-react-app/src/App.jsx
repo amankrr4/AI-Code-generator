@@ -91,7 +91,8 @@ const okaidiaStyle = {
 function ChatInterface() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [userHistory, setUserHistory] = useState([]);
+  const [chatSessions, setChatSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(Date.now());
   const [inputValue, setInputValue] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -236,9 +237,35 @@ function ChatInterface() {
 
   const addMessage = (content, type, language = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
-    const newMessage = { id: Date.now() + Math.random(), type, content: safeContent, language };
+    const newMessage = { 
+      id: Date.now() + Math.random(), 
+      type, 
+      content: safeContent, 
+      language,
+      timestamp: new Date().toISOString()
+    };
     setMessages((prev) => [...prev, newMessage]);
-    if (type === "user") setUserHistory((prev) => [...prev, newMessage]);
+    
+    if (type === "user") {
+      setChatSessions(prev => {
+        const existingSessionIndex = prev.findIndex(s => s.id === currentSessionId);
+        const newSession = {
+          id: currentSessionId,
+          title: safeContent,
+          timestamp: new Date().toISOString(),
+          messages: existingSessionIndex >= 0 
+            ? [...prev[existingSessionIndex].messages, newMessage]
+            : [newMessage]
+        };
+        
+        if (existingSessionIndex >= 0) {
+          const newSessions = [...prev];
+          newSessions[existingSessionIndex] = newSession;
+          return newSessions;
+        }
+        return [newSession, ...prev];
+      });
+    }
   };
 
   const checkOllamaConnection = async (model) => {
@@ -296,7 +323,7 @@ function ChatInterface() {
 
   const newChat = () => {
     setMessages([]);
-    setUserHistory([]);
+    setCurrentSessionId(Date.now());
   };
 
   const handleSave = () => {
@@ -331,8 +358,17 @@ function ChatInterface() {
       <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <button className="new-chat-btn" onClick={newChat}>+ New Chat</button>
         <div className="chat-history">
-          {userHistory.map((msg) => (
-            <div key={msg.id} className="message" title={msg.content}>{msg.content}</div>
+          {chatSessions.map((session) => (
+            <div 
+              key={session.id} 
+              className={`history-session ${session.id === currentSessionId ? 'active' : ''}`}
+              onClick={() => {
+                setCurrentSessionId(session.id);
+                setMessages(session.messages);
+              }}
+            >
+              <div className="session-title">{session.title}</div>
+            </div>
           ))}
         </div>
       </div>
