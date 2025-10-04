@@ -1,0 +1,25 @@
+{
+  "name": "swe-agent-project",
+  "version": "1.0.0",
+  "description": "A modern AI-powered code assistant built with React and Node.js, designed for seamless deployment on Railway (backend) and Vercel (frontend).",
+  "main": "index.js",
+  "scripts": {
+    "backend": "cd backend && node server.js",
+    "frontend": "cd my-react-app && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amankrr4/AI-Code-generator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/amankrr4/AI-Code-generator/issues"
+  },
+  "homepage": "https://github.com/amankrr4/AI-Code-generator#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
