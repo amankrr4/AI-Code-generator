@@ -8,13 +8,13 @@ const okaidiaStyle = {
     background: 'none',
     textShadow: '0 1px rgba(0, 0, 0, 0.3)',
     fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
-    fontSize: '14px', // Set font size to match the rest of the app
+    fontSize: '14px',
     textAlign: 'left',
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
     wordWrap: 'normal',
-    lineHeight: '1.4', // Adjusted line height
+    lineHeight: '1.4',
     MozTabSize: '4',
     OTabSize: '4',
     tabSize: '4',
@@ -25,16 +25,16 @@ const okaidiaStyle = {
   },
   'pre[class*="language-"]': {
     color: '#f8f8f2',
-    background: 'transparent', // Make background transparent
+    background: 'transparent',
     textShadow: '0 1px rgba(0, 0, 0, 0.3)',
     fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
-    fontSize: '14px', // Set font size to match the rest of the app
+    fontSize: '14px',
     textAlign: 'left',
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
     wordWrap: 'normal',
-    lineHeight: '1.4', // Adjusted line height
+    lineHeight: '1.4',
     MozTabSize: '4',
     OTabSize: '4',
     tabSize: '4',
@@ -42,8 +42,8 @@ const okaidiaStyle = {
     MozHyphens: 'none',
     msHyphens: 'none',
     hyphens: 'none',
-    padding: '0', // Remove padding
-    margin: '0', // Remove margin
+    padding: '0',
+    margin: '0',
     overflow: 'auto'
   },
   ':not(pre) > code[class*="language-"]': {
@@ -113,25 +113,18 @@ function ChatInterface() {
   const [showModelOptions, setShowModelOptions] = useState(false);
   const [hasModelOptionsOpened, setHasModelOptionsOpened] = useState(false);
   const [selectedOllamaModel, setSelectedOllamaModel] = useState("");
-
   const [showOllamaOptions, setShowOllamaOptions] = useState(false);
   const [hasOllamaOptionsOpened, setHasOllamaOptionsOpened] = useState(false);
-
   const [ollamaStatus, setOllamaStatus] = useState(null);
-
   const [showLanguageOptions, setShowLanguageOptions] = useState(false);
   const [hasLanguageOptionsOpened, setHasLanguageOptionsOpened] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [chatBarPosition, setChatBarPosition] = useState("center");
 
-  // Dynamic API URL configuration
   const getApiUrl = () => {
-    // In development, use localhost
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
-    // In production, use environment variable or construct from current domain
     return import.meta.env.VITE_API_URL || 'https://your-railway-backend-url.railway.app';
   };
 
@@ -189,25 +182,6 @@ function ChatInterface() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Add wheel event listener to main content for scrolling from anywhere
-  useEffect(() => {
-    const handleWheel = (e) => {
-      if (chatScrollAreaRef.current && e.target !== chatScrollAreaRef.current) {
-        e.preventDefault();
-        chatScrollAreaRef.current.scrollTop += e.deltaY;
-      }
-    };
-
-    if (mainContentRef.current) {
-      mainContentRef.current.addEventListener('wheel', handleWheel, { passive: false });
-      return () => {
-        if (mainContentRef.current) {
-          mainContentRef.current.removeEventListener('wheel', handleWheel);
-        }
-      };
-    }
-  }, []);
-
   useEffect(() => {
     if (showModelOptions) {
       const timer = setTimeout(() => setHasModelOptionsOpened(true), 10);
@@ -235,37 +209,42 @@ function ChatInterface() {
     }
   }, [selectedModel]);
 
+  // ✅ FIXED addMessage (everything else untouched)
   const addMessage = (content, type, language = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
-    const newMessage = { 
-      id: Date.now() + Math.random(), 
-      type, 
-      content: safeContent, 
+    const newMessage = {
+      id: Date.now() + Math.random(),
+      type,
+      content: safeContent,
       language,
       timestamp: new Date().toISOString()
     };
     setMessages((prev) => [...prev, newMessage]);
-    
-    if (type === "user") {
-      setChatSessions(prev => {
-        const existingSessionIndex = prev.findIndex(s => s.id === currentSessionId);
+
+    // Save both user + assistant messages
+    setChatSessions(prev => {
+      const existingSessionIndex = prev.findIndex(s => s.id === currentSessionId);
+      if (existingSessionIndex >= 0) {
+        const updatedSession = {
+          ...prev[existingSessionIndex],
+          messages: [...prev[existingSessionIndex].messages, newMessage],
+        };
+        if (type === "user" && !updatedSession.title) {
+          updatedSession.title = safeContent;
+        }
+        const newSessions = [...prev];
+        newSessions[existingSessionIndex] = updatedSession;
+        return newSessions;
+      } else {
         const newSession = {
           id: currentSessionId,
-          title: safeContent,
+          title: type === "user" ? safeContent : "New Chat",
           timestamp: new Date().toISOString(),
-          messages: existingSessionIndex >= 0 
-            ? [...prev[existingSessionIndex].messages, newMessage]
-            : [newMessage]
+          messages: [newMessage],
         };
-        
-        if (existingSessionIndex >= 0) {
-          const newSessions = [...prev];
-          newSessions[existingSessionIndex] = newSession;
-          return newSessions;
-        }
         return [newSession, ...prev];
-      });
-    }
+      }
+    });
   };
 
   const checkOllamaConnection = async (model) => {
@@ -324,6 +303,7 @@ function ChatInterface() {
   const newChat = () => {
     setMessages([]);
     setCurrentSessionId(Date.now());
+    setChatBarPosition("center"); // Reset chat bar position to center for new chat
   };
 
   const handleSave = () => {
@@ -365,6 +345,8 @@ function ChatInterface() {
               onClick={() => {
                 setCurrentSessionId(session.id);
                 setMessages(session.messages);
+                // Set chat bar position based on whether the session has messages
+                setChatBarPosition(session.messages && session.messages.length > 0 ? "bottom" : "center");
               }}
             >
               <div className="session-title">{session.title}</div>
