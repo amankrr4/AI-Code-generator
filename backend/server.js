@@ -6,9 +6,34 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const BASE_PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
+
+// Function to find an available port
+const findAvailablePort = async (startPort) => {
+    let port = startPort;
+    while (true) {
+        try {
+            await new Promise((resolve, reject) => {
+                const server = app.listen(port, () => {
+                    server.close(() => resolve(port));
+                }).on('error', (err) => {
+                    if (err.code === 'EADDRINUSE') {
+                        port++;
+                        resolve(null);
+                    } else {
+                        reject(err);
+                    }
+                });
+            });
+            return port;
+        } catch (err) {
+            console.error(`Error trying port ${port}:`, err);
+            port++;
+        }
+    }
+};
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
@@ -295,10 +320,16 @@ app.get("/", (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Backend running on http://localhost:${PORT}`);
-    console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
-    console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+// Start the server with automatic port finding
+findAvailablePort(BASE_PORT).then(port => {
+    app.listen(port, () => {
+        console.log(`🚀 Backend running on http://localhost:${port}`);
+        console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+        console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
+        console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
+        console.log(`📊 Health check: http://localhost:${port}/health`);
+    });
+}).catch(err => {
+    console.error("Failed to start server:", err);
+    process.exit(1);
 });
