@@ -48,6 +48,82 @@ body {
   z-index: 1000;
   transition: transform 0.5s ease;
   padding: 12px;
+}
+
+/* Authentication components */
+.user-auth-section {
+  padding: 10px 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.auth-loading {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 10px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+  object-fit: cover;
+}
+
+.user-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.sign-out-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  font-size: 12px;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 2px;
+}
+
+.sign-out-btn:hover {
+  color: var(--danger-color);
+}
+
+.sign-in-btn {
+  width: 100%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.sign-in-btn:hover {
+  transform: scale(1.02);
+  background: #0e8e6d;
   overflow: visible; /* Allow menus to overflow the sidebar */
 }
 

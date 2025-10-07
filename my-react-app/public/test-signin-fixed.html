@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Authentication Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+        button.secondary {
+            background-color: #34A853;
+        }
+        button.warning {
+            background-color: #EA4335;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+            font-size: 12px;
+        }
+        .config-box {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .debug-info {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        .test-group {
+            margin-bottom: 20px;
+        }
+        details {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        summary {
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #api-key-status, #project-status, #auth-status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status-unknown {
+            background-color: #f0f0f0;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Authentication Diagnostics</h1>
+    <p>This page will help identify and fix issues with your Firebase authentication configuration.</p>
+
+    <div class="card">
+        <h2>1. API Key Verification</h2>
+        <button id="test-api-key">Test Firebase API Key</button>
+        <div id="api-key-status" class="status-unknown">Click button to test API key</div>
+    </div>
+
+    <div class="card">
+        <h2>2. Firebase Project Configuration</h2>
+        <button id="test-project" class="secondary">Test Project Configuration</button>
+        <div id="project-status" class="status-unknown">Click button to test project configuration</div>
+    </div>
+
+    <div class="card">
+        <h2>3. Google Authentication Test</h2>
+        <button id="test-auth" class="warning">Test Google Sign-In</button>
+        <div id="auth-status" class="status-unknown">Click button to test authentication</div>
+    </div>
+
+    <div class="config-box">
+        <h3>Current Firebase Configuration:</h3>
+        <div id="config-display"></div>
+        <p><strong>Current Host:</strong> <span id="current-host"></span></p>
+    </div>
+    
+    <div class="debug-info">
+        <details>
+            <summary>Troubleshooting Steps</summary>
+            <h4>If API Key Test Fails:</h4>
+            <ol>
+                <li>Check if the API key is correct</li>
+                <li>Verify the API key restrictions in Google Cloud Console</li>
+                <li>Create a new Firebase project if necessary</li>
+            </ol>
+            
+            <h4>If Project Configuration Test Fails:</h4>
+            <ol>
+                <li>Go to Firebase Console → Authentication → Sign-in methods</li>
+                <li>Enable Google as a sign-in provider</li>
+                <li>Configure a support email</li>
+                <li>Save the changes</li>
+            </ol>
+            
+            <h4>If Google Sign-In Test Fails:</h4>
+            <ol>
+                <li>Check if current domain is in the authorized domains list in Firebase Console</li>
+                <li>Clear browser cache and cookies</li>
+                <li>Try in an incognito/private window</li>
+                <li>Check browser console for additional errors</li>
+            </ol>
+        </details>
+    </div>
+
+    <script src="firebase-test.js"></script>
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyCrANBr61DyOaN639ZefKPI4y2fLzMQI",
+            authDomain: "multimodelchatui.firebaseapp.com",
+            projectId: "multimodelchatui",
+            storageBucket: "multimodelchatui.appspot.com",
+            messagingSenderId: "1086406111921",
+            appId: "1:1086406111921:web:f5bf8a37ecc25d4646a890",
+            measurementId: "G-EXDG4TWG8W"
+        };
+        
+        // Display configuration (hiding sensitive parts)
+        const configDisplay = document.getElementById('config-display');
+        const displayConfig = { ...firebaseConfig };
+        displayConfig.apiKey = displayConfig.apiKey.substring(0, 10) + "...";
+        displayConfig.appId = displayConfig.appId.substring(0, 15) + "...";
+        configDisplay.innerHTML = `<pre>${JSON.stringify(displayConfig, null, 2)}</pre>`;
+        
+        // Display current host
+        document.getElementById('current-host').textContent = window.location.host;
+        
+        // Get DOM elements
+        const testApiKeyBtn = document.getElementById('test-api-key');
+        const testProjectBtn = document.getElementById('test-project');
+        const testAuthBtn = document.getElementById('test-auth');
+        const apiKeyStatus = document.getElementById('api-key-status');
+        const projectStatus = document.getElementById('project-status');
+        const authStatus = document.getElementById('auth-status');
+        
+        // Test API Key
+        testApiKeyBtn.addEventListener('click', async () => {
+            apiKeyStatus.textContent = "Testing API key...";
+            apiKeyStatus.className = "status-unknown";
+            
+            try {
+                const result = await window.testFirebaseApiKey(firebaseConfig.apiKey);
+                if (result) {
+                    apiKeyStatus.textContent = "✅ API Key is valid";
+                    apiKeyStatus.className = "status-success";
+                } else {
+                    apiKeyStatus.innerHTML = "❌ API Key test failed. Check console for details.";
+                    apiKeyStatus.className = "status-error";
+                }
+            } catch (error) {
+                apiKeyStatus.innerHTML = `❌ API Key test error: ${error.message}`;
+                apiKeyStatus.className = "status-error";
+            }
+        });
+        
+        // Test Project Configuration
+        testProjectBtn.addEventListener('click', async () => {
+            projectStatus.textContent = "Testing project configuration...";
+            projectStatus.className = "status-unknown";
+            
+            try {
+                const result = await window.testFirebaseProjectConfig(firebaseConfig.apiKey, firebaseConfig.projectId);
+                if (result) {
+                    projectStatus.textContent = "✅ Project is correctly configured for Google authentication";
+                    projectStatus.className = "status-success";
+                } else {
+                    projectStatus.innerHTML = "❌ Project configuration test failed. Check console for details.<br>You may need to enable Google authentication in Firebase Console.";
+                    projectStatus.className = "status-error";
+                }
+            } catch (error) {
+                projectStatus.innerHTML = `❌ Project configuration test error: ${error.message}`;
+                projectStatus.className = "status-error";
+            }
+        });
+        
+        // Test Google Authentication
+        testAuthBtn.addEventListener('click', async () => {
+            authStatus.textContent = "Testing Google sign-in...";
+            authStatus.className = "status-unknown";
+            
+            try {
+                // Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const provider = new GoogleAuthProvider();
+                provider.setCustomParameters({
+                    prompt: 'select_account'
+                });
+                
+                // Attempt sign-in
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                authStatus.innerHTML = `
+                    ✅ Sign-in successful!<br>
+                    User: ${user.displayName}<br>
+                    Email: ${user.email}<br>
+                    UID: ${user.uid}<br>
+                `;
+                authStatus.className = "status-success";
+            } catch (error) {
+                authStatus.innerHTML = `
+                    ❌ Sign-in failed!<br>
+                    Error code: ${error.code}<br>
+                    Message: ${error.message}<br>
+                `;
+                authStatus.className = "status-error";
+                
+                if (error.code === 'auth/configuration-not-found') {
+                    authStatus.innerHTML += "<br>You need to enable Google authentication in Firebase Console.";
+                }
+                console.error("Auth test error:", error);
+            }
+        });
+    </script>
+</body>
+</html>

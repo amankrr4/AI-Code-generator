@@ -1,5 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { db, auth, googleProvider } from './firebase';
+import { 
+  signInWithGoogle,
+  signOutUser,
+  createChatSession as createFirebaseChatSession,
+  getUserSessions,
+  deleteSession as deleteFirebaseSession,
+  saveMessage as saveFirebaseMessage,
+  getSessionMessages,
+  saveApiKey as saveFirebaseApiKey,
+  getApiKey as getFirebaseApiKey
+} from './firebaseService';
 
 // Style object for the 'okaidia' theme, modified to be transparent and have a smaller font size
 const okaidiaStyle = {
@@ -121,12 +133,33 @@ function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [chatBarPosition, setChatBarPosition] = useState("center");
   const [openMenuId, setOpenMenuId] = useState(null); // Track which three-dot menu is open
+  const [user, setUser] = useState(null); // Firebase user
+  const [authLoading, setAuthLoading] = useState(true); // Loading state for authentication
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
     return import.meta.env.VITE_API_URL || 'https://your-railway-backend-url.railway.app';
+  };
+  
+  // Load user's API keys from Firebase
+  const loadApiKeys = async (userId) => {
+    if (!userId) return;
+    
+    try {
+      // Load OpenAI API key
+      const openaiKey = await getFirebaseApiKey(userId, 'openai');
+      if (openaiKey) {
+        setApiKey(openaiKey);
+      }
+      
+      // Additional API keys can be loaded similarly
+      // const claudeKey = await getFirebaseApiKey(userId, 'claude');
+      // const geminiKey = await getFirebaseApiKey(userId, 'gemini');
+    } catch (error) {
+      console.error("Error loading API keys:", error);
+    }
   };
 
   const chatContainerRef = useRef(null);
@@ -179,7 +212,54 @@ function ChatInterface() {
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(e.target)) {
         setShowLanguageOptions(false);
       }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Firebase authentication listener
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
       
+      if (currentUser) {
+        // Load user's chat sessions from Firebase
+        const loadUserSessions = async () => {
+          try {
+            const sessions = await getUserSessions(currentUser.uid);
+            if (sessions && sessions.length > 0) {
+              setChatSessions(sessions);
+              
+              // Set the current session to the most recent one
+              const latestSession = sessions[0];
+              setCurrentSessionId(latestSession.id);
+              
+              // Load messages for this session
+              const sessionMessages = await getSessionMessages(latestSession.id);
+              setMessages(sessionMessages || []);
+              
+              // Set chat bar position based on messages
+              setChatBarPosition(sessionMessages && sessionMessages.length > 0 ? "bottom" : "center");
+            }
+            
+            // Load user's API keys
+            loadApiKeys(currentUser.uid);
+          } catch (error) {
+            console.error("Error loading user data:", error);
+          }
+        };
+        
+        loadUserSessions();
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // Handle click outside components
+  useEffect(() => {
+    function handleClickOutside(e) {
       // Close any open chat session menu when clicking outside
       if (!e.target.closest('.menu-toggle-btn') && !e.target.closest('.session-menu')) {
         setOpenMenuId(null);
@@ -216,19 +296,34 @@ function ChatInterface() {
     }
   }, [selectedModel]);
 
-  // ✅ FIXED addMessage (everything else untouched)
-  const addMessage = (content, type, language = null) => {
+  // ✅ FIXED addMessage with Firebase integration
+  const addMessage = async (content, type, language = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
+    const messageId = Date.now() + Math.random();
+    
     const newMessage = {
-      id: Date.now() + Math.random(),
+      id: messageId,
       type,
       content: safeContent,
       language,
       timestamp: new Date().toISOString()
     };
+    
+    // Update UI immediately
     setMessages((prev) => [...prev, newMessage]);
 
-    // Save both user + assistant messages
+    // If user is logged in, save message to Firebase
+    if (user && currentSessionId) {
+      try {
+        // Save message to Firebase (role is either 'user' or 'assistant')
+        const role = type === 'user' ? 'user' : 'assistant';
+        await saveFirebaseMessage(currentSessionId, safeContent, role, language);
+      } catch (error) {
+        console.error("Error saving message to Firebase:", error);
+      }
+    }
+
+    // Update local session state
     setChatSessions(prev => {
       const existingSessionIndex = prev.findIndex(s => s.id === currentSessionId);
       if (existingSessionIndex >= 0) {
@@ -333,23 +428,45 @@ function ChatInterface() {
     }
   };
 
-  const newChat = () => {
+  const newChat = async () => {
     // Cancel any in-flight requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null; // Clean up the reference
     }
     
-    // Create a new chat session with a new ID
-    const newSessionId = Date.now();
-    setCurrentSessionId(newSessionId);
-    
-    // Clear messages in the UI
-    setMessages([]);
-    
     // Reset UI state
     setChatBarPosition("center"); // Reset chat bar position to center for new chat
     setLoading(false); // Reset loading state to ensure loader doesn't appear in new chat
+    setMessages([]);
+    
+    // If user is logged in, create chat in Firebase
+    if (user) {
+      try {
+        // Create a new chat session in Firebase
+        const newChatData = await createFirebaseChatSession(user.uid, "New Chat");
+        
+        // Set the current session to the new one
+        setCurrentSessionId(newChatData.id);
+        
+        // Add the new session to the UI
+        setChatSessions(prev => [newChatData, ...prev]);
+      } catch (error) {
+        console.error("Error creating new chat:", error);
+        // Fall back to local creation if Firebase fails
+        localNewChat();
+      }
+    } else {
+      // Not logged in, create chat locally
+      localNewChat();
+    }
+  };
+  
+  // Create a new chat locally (when not logged in)
+  const localNewChat = () => {
+    // Create a new chat session with a new ID
+    const newSessionId = Date.now();
+    setCurrentSessionId(newSessionId);
     
     // Add the new empty session to chat sessions
     setChatSessions(prev => {
@@ -380,14 +497,23 @@ function ChatInterface() {
   };
   
   // Function to delete a chat session
-  const deleteSession = (sessionId, e) => {
+  const deleteSession = async (sessionId, e) => {
     // Prevent the click from bubbling up to the parent (chat session)
     e.stopPropagation();
     
     // Close the menu
     setOpenMenuId(null);
     
-    // Filter out the session with the given ID
+    // If user is logged in, delete from Firebase
+    if (user) {
+      try {
+        await deleteFirebaseSession(sessionId);
+      } catch (error) {
+        console.error("Error deleting session from Firebase:", error);
+      }
+    }
+    
+    // Filter out the session with the given ID (do this regardless of Firebase success)
     setChatSessions(prev => prev.filter(session => session.id !== sessionId));
     
     // If the deleted session was the current one, create a new chat
@@ -419,6 +545,35 @@ function ChatInterface() {
   return (
     <div className="app-container">
       <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        {/* User authentication section */}
+        <div className="user-auth-section">
+          {authLoading ? (
+            <div className="auth-loading">Loading...</div>
+          ) : user ? (
+            <div className="user-profile">
+              {user.photoURL && (
+                <img src={user.photoURL} alt="Profile" className="user-avatar" />
+              )}
+              <div className="user-info">
+                <div className="user-name">{user.displayName || user.email}</div>
+                <button 
+                  className="sign-out-btn" 
+                  onClick={() => signOutUser()}
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button 
+              className="sign-in-btn" 
+              onClick={() => signInWithGoogle().catch(err => console.log(err))}
+            >
+              Sign in with Google
+            </button>
+          )}
+        </div>
+        
         <button className="new-chat-btn" onClick={newChat}>+ New Chat</button>
         <div className="chat-history">
           {chatSessions.map((session) => (
@@ -517,7 +672,20 @@ function ChatInterface() {
             {selectedModel && selectedModel !== "Ollama-Local" && (
               <div className="mt-4">
                 <label className="block mb-2 text-sm">Enter API Key</label>
-                <input type="password" placeholder="Enter API Key" className="api-input" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                <input 
+                  type="password" 
+                  placeholder="Enter API Key" 
+                  className="api-input" 
+                  value={apiKey} 
+                  onChange={(e) => setApiKey(e.target.value)}
+                  onBlur={() => {
+                    // Save API key to Firebase when input loses focus (if user is logged in)
+                    if (user && apiKey) {
+                      saveFirebaseApiKey(user.uid, 'openai', apiKey)
+                        .catch(err => console.error("Error saving API key:", err));
+                    }
+                  }}
+                />
               </div>
             )}
             <button className="api-ok-btn mt-4" onClick={handleSave}>Save</button>

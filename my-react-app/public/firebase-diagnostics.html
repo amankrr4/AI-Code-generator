@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Diagnostics Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #3367D6;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .log {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background-color: #f8f8f8;
+        }
+        .test-group {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Authentication Diagnostics Tool</h1>
+    <p>This tool will help diagnose issues with Firebase Authentication in your application.</p>
+
+    <div class="card">
+        <h2>Environment Information</h2>
+        <div id="env-info"></div>
+    </div>
+
+    <div class="test-group">
+        <h2>Test 1: Firebase Initialization</h2>
+        <button id="test-init">Test Firebase Initialization</button>
+        <div id="init-result" class="log">Click the button to run the test...</div>
+    </div>
+
+    <div class="test-group">
+        <h2>Test 2: Auth Provider Setup</h2>
+        <button id="test-provider">Test Auth Provider</button>
+        <div id="provider-result" class="log">Click the button to run the test...</div>
+    </div>
+
+    <div class="test-group">
+        <h2>Test 3: Google Authentication Flow</h2>
+        <button id="test-auth">Test Sign-In with Google</button>
+        <div id="auth-result" class="log">Click the button to run the test...</div>
+    </div>
+
+    <div class="card">
+        <h2>Firebase Configuration Check</h2>
+        <p>Ensure these settings match your Firebase console configuration:</p>
+        <div id="config-info"></div>
+    </div>
+
+    <div class="card">
+        <h2>Troubleshooting Steps</h2>
+        <ol>
+            <li>Make sure you are on an authorized domain (localhost, your deployed domain, etc.)</li>
+            <li>Verify that Google Sign-in is enabled in Firebase Console under Authentication → Sign-in methods</li>
+            <li>Check that your Firebase project is properly configured with the correct API keys</li>
+            <li>Ensure you're using the latest version of Firebase SDK</li>
+            <li>Clear browser cache and cookies if you've recently changed configurations</li>
+        </ol>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+        import { getFirestore, doc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+
+        // DOM Elements
+        const envInfoEl = document.getElementById('env-info');
+        const initResultEl = document.getElementById('init-result');
+        const providerResultEl = document.getElementById('provider-result');
+        const authResultEl = document.getElementById('auth-result');
+        const configInfoEl = document.getElementById('config-info');
+        const currentUrlEl = document.getElementById('current-url');
+
+        // Display current URL
+        currentUrlEl.textContent = window.location.href;
+
+        // Environment info
+        envInfoEl.innerHTML = `
+            <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+            <p><strong>Browser:</strong> ${getBrowserInfo()}</p>
+            <p><strong>Firebase SDK:</strong> 10.7.0 (CDN)</p>
+        `;
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCyCrANBr61DyOaN639ZefKPI4y2fLzMQI",
+            authDomain: "multimodelchatui.firebaseapp.com",
+            projectId: "multimodelchatui",
+            storageBucket: "multimodelchatui.appspot.com",
+            messagingSenderId: "1086406111921",
+            appId: "1:1086406111921:web:f5bf8a37ecc25d4646a890",
+            measurementId: "G-EXDG4TWG8W"
+        };
+
+        // Display redacted config
+        const displayConfig = { ...firebaseConfig };
+        displayConfig.apiKey = displayConfig.apiKey.substring(0, 10) + "...";
+        displayConfig.appId = displayConfig.appId.substring(0, 15) + "...";
+        configInfoEl.innerHTML = `<pre>${JSON.stringify(displayConfig, null, 2)}</pre>`;
+
+        // Initialize Firebase (don't do this until test is run)
+        let app, auth, db, provider;
+
+        // Test 1: Firebase Initialization
+        document.getElementById('test-init').addEventListener('click', () => {
+            initResultEl.innerHTML = 'Testing Firebase initialization...';
+            
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                
+                initResultEl.innerHTML = `
+                    <span class="success">✓ Firebase initialized successfully!</span><br>
+                    <strong>App Name:</strong> ${app.name}<br>
+                    <strong>Project ID:</strong> ${app.options.projectId}<br>
+                    <strong>Auth Domain:</strong> ${app.options.authDomain}<br>
+                `;
+            } catch (error) {
+                initResultEl.innerHTML = `
+                    <span class="error">✗ Firebase initialization failed!</span><br>
+                    <strong>Error:</strong> ${error.message}<br>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+                console.error("Initialization error:", error);
+            }
+        });
+
+        // Test 2: Auth Provider Setup
+        document.getElementById('test-provider').addEventListener('click', () => {
+            providerResultEl.innerHTML = 'Testing Auth Provider setup...';
+            
+            if (!auth) {
+                providerResultEl.innerHTML = `
+                    <span class="error">✗ Auth not initialized!</span><br>
+                    Please run Test 1 first.
+                `;
+                return;
+            }
+            
+            try {
+                provider = new GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                
+                providerResultEl.innerHTML = `
+                    <span class="success">✓ Google Auth Provider initialized successfully!</span><br>
+                    <strong>Provider ID:</strong> ${provider.providerId}<br>
+                    <strong>Custom Parameters:</strong> prompt=select_account<br>
+                `;
+                
+                // Check if Google auth is enabled
+                checkGoogleAuthStatus();
+                
+            } catch (error) {
+                providerResultEl.innerHTML = `
+                    <span class="error">✗ Auth Provider setup failed!</span><br>
+                    <strong>Error:</strong> ${error.message}<br>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+                console.error("Provider setup error:", error);
+            }
+        });
+
+        // Test 3: Google Authentication
+        document.getElementById('test-auth').addEventListener('click', async () => {
+            authResultEl.innerHTML = 'Attempting to sign in with Google...';
+            
+            if (!auth || !provider) {
+                authResultEl.innerHTML = `
+                    <span class="error">✗ Auth or Provider not initialized!</span><br>
+                    Please run Tests 1 and 2 first.
+                `;
+                return;
+            }
+            
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                authResultEl.innerHTML = `
+                    <span class="success">✓ Sign-in successful!</span><br>
+                    <strong>User:</strong> ${user.displayName}<br>
+                    <strong>Email:</strong> ${user.email}<br>
+                    <strong>UID:</strong> ${user.uid}<br>
+                    <strong>Provider:</strong> ${user.providerData[0].providerId}<br>
+                `;
+                
+                // Try to save to Firestore
+                try {
+                    const userRef = doc(db, "users", user.uid);
+                    await setDoc(userRef, {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || '',
+                        photoURL: user.photoURL || '',
+                        lastLogin: serverTimestamp()
+                    }, { merge: true });
+                    
+                    authResultEl.innerHTML += `<br><span class="success">✓ User data saved to Firestore!</span>`;
+                } catch (firestoreError) {
+                    authResultEl.innerHTML += `<br><span class="error">✗ Firestore save failed: ${firestoreError.message}</span>`;
+                    console.error("Firestore error:", firestoreError);
+                }
+                
+            } catch (error) {
+                authResultEl.innerHTML = `
+                    <span class="error">✗ Sign-in failed!</span><br>
+                    <strong>Error code:</strong> ${error.code}<br>
+                    <strong>Message:</strong> ${error.message}<br>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+                
+                // Add specific troubleshooting for common errors
+                if (error.code === 'auth/configuration-not-found') {
+                    authResultEl.innerHTML += `
+                        <br><strong>Troubleshooting:</strong><br>
+                        <ol>
+                            <li>Go to Firebase Console > Authentication > Sign-in methods</li>
+                            <li>Enable Google as a sign-in provider</li>
+                            <li>Make sure your current domain is in the authorized domains list</li>
+                            <li>Check that your Firebase project is properly set up</li>
+                        </ol>
+                    `;
+                }
+                
+                console.error("Sign-in error:", error);
+            }
+        });
+
+        // Check if Google auth is enabled by making a simple API request
+        async function checkGoogleAuthStatus() {
+            try {
+                // We can't directly check if Google auth is enabled,
+                // but we can check if the auth domain resolves correctly
+                const domainCheck = await fetch(`https://${firebaseConfig.authDomain}/robots.txt`, {
+                    mode: 'no-cors',  // This will prevent CORS issues
+                }).catch(() => null);
+                
+                if (domainCheck) {
+                    providerResultEl.innerHTML += `<br><span class="success">✓ Auth domain (${firebaseConfig.authDomain}) is accessible</span>`;
+                } else {
+                    providerResultEl.innerHTML += `<br><span class="error">✗ Auth domain (${firebaseConfig.authDomain}) might not be accessible</span>`;
+                }
+            } catch (error) {
+                console.error("Domain check error:", error);
+            }
+        }
+
+        // Helper function to get browser info
+        function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let browser = "Unknown";
+            
+            if (ua.includes("Firefox")) {
+                browser = "Firefox";
+            } else if (ua.includes("SamsungBrowser")) {
+                browser = "Samsung Internet";
+            } else if (ua.includes("Opera") || ua.includes("OPR")) {
+                browser = "Opera";
+            } else if (ua.includes("Edg")) {
+                browser = "Microsoft Edge";
+            } else if (ua.includes("Chrome")) {
+                browser = "Chrome";
+            } else if (ua.includes("Safari")) {
+                browser = "Safari";
+            }
+            
+            return browser;
+        }
+    </script>
+</body>
+</html>
