@@ -6,34 +6,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const BASE_PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-
-// Function to find an available port
-const findAvailablePort = async (startPort) => {
-    let port = startPort;
-    while (true) {
-        try {
-            await new Promise((resolve, reject) => {
-                const server = app.listen(port, () => {
-                    server.close(() => resolve(port));
-                }).on('error', (err) => {
-                    if (err.code === 'EADDRINUSE') {
-                        port++;
-                        resolve(null);
-                    } else {
-                        reject(err);
-                    }
-                });
-            });
-            return port;
-        } catch (err) {
-            console.error(`Error trying port ${port}:`, err);
-            port++;
-        }
-    }
-};
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
@@ -255,16 +230,24 @@ Rules:
             }
         }
 
-        // Clean up response text (remove markdown fences if present)
+        // Clean up response text and extract language from markdown fences if present
+        let detectedLanguage = language; // Default to requested language
+        
+        // Check if the response has markdown code blocks with language specifier
+        const markdownLangMatch = responseText.match(/^```(\w+)/);
+        if (markdownLangMatch && markdownLangMatch[1]) {
+            detectedLanguage = markdownLangMatch[1]; // Use the language from markdown fence
+        }
+        
         const cleanResponse = responseText
             .replace(/^```[\w]*\n?/g, '')
             .replace(/\n?```$/g, '')
             .trim();
 
-        res.json({ response: cleanResponse, language });
+        res.json({ response: cleanResponse, language: detectedLanguage });
     } catch (error) {
         console.error("Chat API Error:", error);
-        
+
         // Better error messages for different scenarios
         let errorMessage = "Unknown error occurred";
         if (error.message.includes("fetch")) {
@@ -299,7 +282,7 @@ app.post("/api/user-state", (req, res) => {
 
 // Health check
 app.get("/health", (req, res) => {
-    res.json({ 
+    res.json({
         status: "Backend is running",
         environment: isProduction ? "production" : "development",
         timestamp: new Date().toISOString(),
@@ -320,16 +303,10 @@ app.get("/", (req, res) => {
     });
 });
 
-// Start the server with automatic port finding
-findAvailablePort(BASE_PORT).then(port => {
-    app.listen(port, () => {
-        console.log(`🚀 Backend running on http://localhost:${port}`);
-        console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-        console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
-        console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
-        console.log(`📊 Health check: http://localhost:${port}/health`);
-    });
-}).catch(err => {
-    console.error("Failed to start server:", err);
-    process.exit(1);
+app.listen(PORT, () => {
+    console.log(`🚀 Backend running on http://localhost:${PORT}`);
+    console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+    console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
+    console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
 });

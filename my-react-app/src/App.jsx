@@ -120,6 +120,7 @@ function ChatInterface() {
   const [hasLanguageOptionsOpened, setHasLanguageOptionsOpened] = useState(false);
   const [loading, setLoading] = useState(false);
   const [chatBarPosition, setChatBarPosition] = useState("center");
+  const [openMenuId, setOpenMenuId] = useState(null); // Track which three-dot menu is open
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -134,6 +135,7 @@ function ChatInterface() {
   const mainContentRef = useRef(null);
   const textareaRef = useRef(null);
   const languageDropdownRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const languages = ["Python", "JavaScript", "Java", "C++", "Ruby", "Go", "Rust", "TypeScript", "Swift", "Kotlin"];
   const models = ["gpt-4", "gpt-3.5-turbo", "Claude", "Gemini-Flash", "Gemini-Pro", "Ollama-Local"];
@@ -176,6 +178,11 @@ function ChatInterface() {
       }
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(e.target)) {
         setShowLanguageOptions(false);
+      }
+      
+      // Close any open chat session menu when clicking outside
+      if (!e.target.closest('.menu-toggle-btn') && !e.target.closest('.session-menu')) {
+        setOpenMenuId(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -228,6 +235,7 @@ function ChatInterface() {
         const updatedSession = {
           ...prev[existingSessionIndex],
           messages: [...prev[existingSessionIndex].messages, newMessage],
+          // Don't update loading state here as it's managed separately
         };
         if (type === "user" && !updatedSession.title) {
           updatedSession.title = safeContent;
@@ -241,6 +249,7 @@ function ChatInterface() {
           title: type === "user" ? safeContent : "New Chat",
           timestamp: new Date().toISOString(),
           messages: [newMessage],
+          // Initialize with not loading
         };
         return [newSession, ...prev];
       }
@@ -272,38 +281,86 @@ function ChatInterface() {
       addMessage(inputValue, "user"); // Add user message immediately
       setInputValue(""); // Clear input field
       setLoading(true); // Show loading indicator
+      
+      // Create a new AbortController for this request and store it in the ref
+      // Cancel any previous request if it exists
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+      
       try {
         const modelToUse = selectedModel === "Ollama-Local" ? selectedOllamaModel : selectedModel;
         const res = await fetch(`${getApiUrl()}/api/chat`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST", 
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             prompt: inputValue, language: selectedLanguage, model: modelToUse,
             apiKey: selectedModel !== "Ollama-Local" ? apiKey : null,
           }),
+          signal: abortControllerRef.current.signal, // Add abort signal to the fetch request
         });
         const data = await res.json();
         if (res.ok && data?.response) {
-          addMessage(data.response, "assistant", data.language || "plaintext");
+          // Ensure the language is always passed correctly, using selectedLanguage as fallback
+          // And ensure it's not undefined or null
+          const responseLanguage = data.language || selectedLanguage;
+          console.log("Response language:", responseLanguage); // Debug the language
+          addMessage(data.response, "assistant", responseLanguage);
         } else {
           addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext");
         }
       } catch (err) {
         console.error("Chat error:", err);
+        
+        // Don't show error message if the request was aborted (user clicked New Chat)
+        if (err.name === 'AbortError') {
+          console.log("Request was aborted");
+          setLoading(false); // Ensure loading is turned off when aborting
+          return; // Don't add any error message as this is intentional
+        }
+        
         let errorMessage = "⚠️ Error contacting backend";
         if (err.name === 'TypeError' && err.message.includes('fetch')) {
           errorMessage = "⚠️ Network error - please check your internet connection";
         }
         addMessage(errorMessage, "assistant", "plaintext");
       } finally {
+        // Always reset loading state when the request completes or fails
+        // The abort case is handled separately in the catch block
         setLoading(false); // Hide loading indicator
       }
     }
   };
 
   const newChat = () => {
+    // Cancel any in-flight requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null; // Clean up the reference
+    }
+    
+    // Create a new chat session with a new ID
+    const newSessionId = Date.now();
+    setCurrentSessionId(newSessionId);
+    
+    // Clear messages in the UI
     setMessages([]);
-    setCurrentSessionId(Date.now());
+    
+    // Reset UI state
     setChatBarPosition("center"); // Reset chat bar position to center for new chat
+    setLoading(false); // Reset loading state to ensure loader doesn't appear in new chat
+    
+    // Add the new empty session to chat sessions
+    setChatSessions(prev => {
+      const newSession = {
+        id: newSessionId,
+        title: "New Chat",
+        timestamp: new Date().toISOString(),
+        messages: [],
+      };
+      return [newSession, ...prev];
+    });
   };
 
   const handleSave = () => {
@@ -320,6 +377,32 @@ function ChatInterface() {
       }
     }
     setShowSelector(false);
+  };
+  
+  // Function to delete a chat session
+  const deleteSession = (sessionId, e) => {
+    // Prevent the click from bubbling up to the parent (chat session)
+    e.stopPropagation();
+    
+    // Close the menu
+    setOpenMenuId(null);
+    
+    // Filter out the session with the given ID
+    setChatSessions(prev => prev.filter(session => session.id !== sessionId));
+    
+    // If the deleted session was the current one, create a new chat
+    if (sessionId === currentSessionId) {
+      newChat();
+    }
+  };
+  
+  // Function to toggle the menu for a specific session
+  const toggleMenu = (sessionId, e) => {
+    // Prevent the click from bubbling up to the parent (chat session)
+    e.stopPropagation();
+    
+    // Toggle the menu
+    setOpenMenuId(openMenuId === sessionId ? null : sessionId);
   };
 
   useEffect(() => {
@@ -343,13 +426,39 @@ function ChatInterface() {
               key={session.id} 
               className={`history-session ${session.id === currentSessionId ? 'active' : ''}`}
               onClick={() => {
+                // Cancel any in-flight requests from the current session before switching
+                if (abortControllerRef.current) {
+                  abortControllerRef.current.abort();
+                  abortControllerRef.current = null;
+                }
+                
                 setCurrentSessionId(session.id);
                 setMessages(session.messages);
+                // Always reset loading state when switching chats
+                setLoading(false);
                 // Set chat bar position based on whether the session has messages
                 setChatBarPosition(session.messages && session.messages.length > 0 ? "bottom" : "center");
               }}
             >
               <div className="session-title">{session.title}</div>
+              <div className="session-actions">
+                <button 
+                  className="menu-toggle-btn"
+                  onClick={(e) => toggleMenu(session.id, e)}
+                >
+                  •••
+                </button>
+                {openMenuId === session.id && (
+                  <div className="session-menu">
+                    <button 
+                      className="delete-btn"
+                      onClick={(e) => deleteSession(session.id, e)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -417,10 +526,14 @@ function ChatInterface() {
 
         <div className="chat-scroll-area" ref={chatScrollAreaRef} style={{ overflowY: 'auto', maxHeight: 'calc(100% - 80px)' }}>
           <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
-            {messages.map((message) => (
+            {messages.map((message) => {
+              // Debug logging for message language
+              console.log(`Message ID ${message.id} Type: ${message.type} Language: ${message.language}`);
+              
+              return (
               <div key={message.id} className={`message ${message.type}`}>
                 {message.type === "assistant" && (
-                  <button 
+                  <button
                     className={`copy-btn ${copiedMessageId === message.content ? 'copied' : ''}`}
                     onClick={() => handleCopy(message.content)}
                   >
@@ -432,6 +545,7 @@ function ChatInterface() {
                     language={message.language.toLowerCase()}
                     style={okaidiaStyle}
                     wrapLongLines={true}
+                    showLineNumbers={false}
                   >
                     {message.content}
                   </SyntaxHighlighter>
@@ -439,7 +553,9 @@ function ChatInterface() {
                   message.content
                 )}
               </div>
-            ))}
+            );
+            })}
+            {/* Only show loader if loading state is true */}
             {loading && (
               <div className="loader">
                 <div className="circle"><div className="dot"></div><div className="outline"></div></div>
