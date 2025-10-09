@@ -171,7 +171,7 @@ function ChatInterface() {
   const abortControllerRef = useRef(null);
 
   const languages = ["Python", "JavaScript", "Java", "C++", "Ruby", "Go", "Rust", "TypeScript", "Swift", "Kotlin"];
-  const models = ["gpt-4", "gpt-3.5-turbo", "Claude", "Gemini-Flash", "Gemini-Pro", "Ollama-Local"];
+  const models = ["gpt-4.1", "Claude", "Gemini-Flash", "Gemini-Pro", "Ollama-Local"];
   const ollamaModels = [
     "phi3:3.8b", "mistral:7b", "llama3:8b", "gemma:2b", "gemma3:4b",
     "gemma:7b", "codegemma:2b", "codegemma:7b", "starcoder2:3b", "deepseek-coder:6.7b",

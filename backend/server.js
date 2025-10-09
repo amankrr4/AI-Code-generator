@@ -96,11 +96,9 @@ Rules:
                 });
             }
 
-            let openaiModel = "gpt-3.5-turbo";
-            if (model.toLowerCase().includes("4")) {
-                openaiModel = "gpt-4o-mini";
-            } else if (model.toLowerCase().includes("3.5")) {
-                openaiModel = "gpt-3.5-turbo";
+            let openaiModel = "gpt-4.1";
+            if (model.toLowerCase().includes("4.1")) {
+                openaiModel = "gpt-4.1";
             }
 
             const response = await fetch("https://api.openai.com/v1/chat/completions", {
