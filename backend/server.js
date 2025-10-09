@@ -200,6 +200,44 @@ Rules:
             responseText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
         }
 
+        // ================== GROQ ==================
+        else if (model.toLowerCase().startsWith("groq")) {
+            const effectiveApiKey = apiKey || process.env.GROQ_API_KEY;
+            if (!effectiveApiKey) {
+                return res.status(400).json({
+                    response: "⚠️ API key required for Groq. Please provide one or set GROQ_API_KEY environment variable.",
+                    language: "plaintext",
+                });
+            }
+
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${effectiveApiKey}`
+                },
+                body: JSON.stringify({
+                    model: "openai/gpt-oss-20b",
+                    messages: [
+                        { role: "system", content: "You are an expert programmer." },
+                        { role: "user", content: wrappedPrompt }
+                    ],
+                    temperature: 0.2,
+                    max_tokens: 8192,
+                    top_p: 1,
+                    reasoning_effort: "medium"
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(`Groq API error: ${response.status} ${err}`);
+            }
+
+            const data = await response.json();
+            responseText = data.choices?.[0]?.message?.content?.trim() || "";
+        }
+
         // ================== OLLAMA ==================
         else {
             const response = await fetch(`${OLLAMA_URL}/api/generate`, {
