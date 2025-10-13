@@ -659,11 +659,16 @@ function ChatInterface() {
                 <ul className={`model-options-list ${hasModelOptionsOpened ? "list-open" : ""}`}>
                   {models.map((m) => (
                     <li key={m} className="model-option">
-                      <span onClick={() => {
-                        setSelectedModel(m);
-                        setShowModelOptions(false);
-                        if (m !== "Ollama-Local") setOllamaStatus(null);
-                      }}>{m}</span>
+                      <div 
+                        className="model-option-name"
+                        onClick={() => {
+                          setSelectedModel(m);
+                          setShowModelOptions(false);
+                          if (m !== "Ollama-Local") setOllamaStatus(null);
+                        }}
+                      >
+                        {m}
+                      </div>
                       <a 
                         href={getApiLink(m)} 
                         className="get-api-link"
@@ -671,7 +676,7 @@ function ChatInterface() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        Get API
+                        {m === "Ollama-Local" ? "Know More" : "Get API"}
                       </a>
                     </li>
                   ))}
