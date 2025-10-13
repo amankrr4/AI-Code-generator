@@ -131,6 +131,8 @@ body {
 }
 
 .sign-in-btn {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -139,13 +141,71 @@ body {
   padding: 8px 10px;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
+/* 🔹 Animated laser border */
+.sign-in-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  padding: 0.7px;
+  /* very thin border */
+  background: linear-gradient(90deg,
+      #4285f4 0%,
+      /* Blue */
+      #34a853 25%,
+      /* Green */
+      #fbbc05 50%,
+      /* Yellow */
+      #ea4335 75%,
+      /* Red */
+      #4285f4 100%
+      /* Blue again */
+    );
+  background-size: 400% 400%;
+  animation: googleBorder 3s linear infinite, pulseGlow 2s ease-in-out infinite;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* 🔸 Moving gradient animation */
+@keyframes googleBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 400% 50%;
+  }
+}
+
+/* ✨ Subtle pulsing glow */
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+    opacity: 0.7;
+  }
+
+  50% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    opacity: 1;
+  }
+}
+
+/* 🟡 Google icon styles */
 .google-icon {
   margin-right: 10px;
   display: flex;
@@ -157,6 +217,20 @@ body {
   border-radius: 50%;
   padding: 2px;
   transition: transform 0.2s;
+}
+
+/* 🎯 Hover + Active effects */
+.sign-in-btn:hover {
+  transform: scale(1.02);
+  background: var(--bg-tertiary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.sign-in-btn:active {
+  transform: scale(0.97);
+  background: var(--bg-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  transition: all 0.1s;
 }
 
 .sign-in-btn:active .google-icon {
