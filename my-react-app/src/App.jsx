@@ -575,7 +575,6 @@ function ChatInterface() {
                 <button 
                   className="sign-out-btn" 
                   onClick={() => signOutUser()}
-                  title="Sign Out"
                 >
                   <span style={{ marginRight: '3px' }}>↪</span> Sign Out
                 </button>
