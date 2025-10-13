@@ -281,6 +281,13 @@ body {
   transform: scale(1.1);
 }
 
+.new-chat-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3) inset;
+  background: var(--bg-secondary);
+  transition: transform 0.1s ease;
+}
+
 .chat-history {
   display: flex;
   flex-direction: column;
