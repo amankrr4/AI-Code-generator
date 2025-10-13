@@ -1,5 +1,3 @@
-// Simple Firebase tester
-// Run this in browser console to test your Firebase configuration and Authentication
 
 // Test Firebase API Key
 async function testFirebaseApiKey(apiKey) {

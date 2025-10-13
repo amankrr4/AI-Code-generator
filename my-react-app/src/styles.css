@@ -670,12 +670,31 @@ body {
   border-radius: 8px;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .model-option:hover {
   background: #3a3a3a;
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.get-api-link {
+  font-size: 10px;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: rgba(16, 163, 127, 0.1);
+  margin-left: 5px;
+  transition: all 0.2s ease;
+}
+
+.get-api-link:hover {
+  background-color: rgba(16, 163, 127, 0.2);
+  transform: translateY(-1px);
 }
 
 .ollama-status {

@@ -174,6 +174,25 @@ function ChatInterface() {
     "gemma:7b", "codegemma:2b", "codegemma:7b", "starcoder2:3b", "deepseek-coder:6.7b",
   ];
 
+  // Function to get API link for each model
+  const getApiLink = (model) => {
+    switch (model) {
+      case "gpt-4.1":
+        return "https://platform.openai.com/signup";
+      case "Claude":
+        return "https://www.anthropic.com/api";
+      case "Gemini-Flash":
+      case "Gemini-Pro":
+        return "https://ai.google.dev/";
+      case "Groq-GPT-OSS-20B":
+        return "https://console.groq.com/keys";
+      case "Ollama-Local":
+        return "https://ollama.com/download";
+      default:
+        return "#";
+    }
+  };
+
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -639,11 +658,22 @@ function ChatInterface() {
               {showModelOptions && (
                 <ul className={`model-options-list ${hasModelOptionsOpened ? "list-open" : ""}`}>
                   {models.map((m) => (
-                    <li key={m} className="model-option" onClick={() => {
-                      setSelectedModel(m);
-                      setShowModelOptions(false);
-                      if (m !== "Ollama-Local") setOllamaStatus(null);
-                    }}>{m}</li>
+                    <li key={m} className="model-option">
+                      <span onClick={() => {
+                        setSelectedModel(m);
+                        setShowModelOptions(false);
+                        if (m !== "Ollama-Local") setOllamaStatus(null);
+                      }}>{m}</span>
+                      <a 
+                        href={getApiLink(m)} 
+                        className="get-api-link"
+                        onClick={(e) => e.stopPropagation()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Get API
+                      </a>
+                    </li>
                   ))}
                 </ul>
               )}
