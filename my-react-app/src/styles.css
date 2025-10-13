@@ -291,22 +291,30 @@ body {
 .chat-history {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 1px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 6px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.chat-history::-webkit-scrollbar {
+  display: none;
 }
 
 .history-session {
   display: flex;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
   background: var(--bg-tertiary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
+  min-height: 30px;
 }
 
 .history-session:hover {
@@ -320,11 +328,12 @@ body {
 }
 
 .session-title {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
 /* Main Content */
@@ -979,9 +988,9 @@ body {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 12px;
   cursor: pointer;
-  padding: 0 6px;
+  padding: 0 4px;
   line-height: 1;
   opacity: 0.6;
   font-weight: bold;
