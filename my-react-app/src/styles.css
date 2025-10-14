@@ -1,4 +1,12 @@
 /* src/styles.css */
+/* LED Dot Matrix font */
+@font-face {
+  font-family: 'LED Dot Matrix';
+  src: url('/fonts/LED-Dot-Matrix.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 * {
   margin: 0;
   padding: 0;
@@ -1067,14 +1075,14 @@ body {
 
 .typing-text {
   display: inline-block;
-  font-size: 2.2rem;
-  font-weight: 500;
-  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', 'Fira Code', monospace;
+  font-size: 3rem; /* Increased from 2.2rem for larger text */
+  font-weight: normal;
+  font-family: 'LED Dot Matrix', Consolas, Monaco, monospace;
   color: var(--accent);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em; /* Slightly increased for better dot matrix appearance */
   overflow: hidden;
   white-space: nowrap;
-  border-right: 0.15em solid var(--accent);
+  border-right: 0.05em solid var(--accent); /* Reduced from 0.15em to make cursor thinner */
   margin: 0 auto;
   animation: typing 3.5s steps(10, end),
              blink-caret 0.75s step-end infinite;
