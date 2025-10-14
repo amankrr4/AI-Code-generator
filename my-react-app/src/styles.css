@@ -75,9 +75,7 @@ body {
 .user-profile {
   display: flex;
   align-items: center;
-  padding: 5px;
-  border-radius: 8px;
-  background: var(--bg-tertiary);
+  justify-content: space-between;
 }
 
 .user-avatar {
@@ -89,20 +87,17 @@ body {
 }
 
 .user-info {
-  flex: 1;
-  overflow: visible; /* Change from hidden to visible to prevent cutting off button */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 0; /* Add some vertical padding for hover space */
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible;
 }
 
 .user-name {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  text-overflow: unset;
   color: var(--text-primary);
   max-width: 70%; /* Limit width to make space for sign out button */
 }
@@ -330,12 +325,6 @@ body {
   transform: translateX(4px);
 }
 
-.history-session.active {
-  /* Removed highlighting styles */
-  /* You can uncomment these if you want to restore them later */
-  /* border-color: var(--accent); */
-  /* background: var(--hover-bg); */
-}
 
 .session-title {
   font-size: 12px;
@@ -1013,12 +1002,7 @@ body {
   color: var(--primary-color);
 }
 
-/* Separated from hover style to remove active highlighting */
-.history-session.active .menu-toggle-btn {
-  /* Removed active styling */
-  /* opacity: 1; */
-  /* color: var(--primary-color); */
-}
+
 
 .session-menu {
   position: absolute;
@@ -1121,5 +1105,66 @@ body {
 @keyframes blink-caret {
   from, to { border-color: transparent }
   50% { border-color: var(--accent); }
+}
+
+.profile-menu-btn svg {
+  color: #fff;
+}
+
+.profile-menu-btn:hover svg {
+  color: var(--accent, #10a37f);
+}
+
+.profile-menu-container {
+  position: relative;
+}
+
+.profile-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  min-width: 160px;
+  z-index: 1000;
+  margin-top: 8px;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+}
+
+.profile-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-menu-item svg {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 

@@ -135,6 +135,7 @@ function ChatInterface() {
   const [openMenuId, setOpenMenuId] = useState(null); // Track which three-dot menu is open
   const [user, setUser] = useState(null); // Firebase user
   const [authLoading, setAuthLoading] = useState(true); // Loading state for authentication
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false); // Track if profile menu is open
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -166,6 +167,7 @@ function ChatInterface() {
   const textareaRef = useRef(null);
   const languageDropdownRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const profileMenuRef = useRef(null);
 
   const languages = ["Python", "JavaScript", "Java", "C++", "Ruby", "Go", "Rust", "TypeScript", "Swift", "Kotlin"];
   const models = ["gpt-4.1", "Claude", "Gemini-Flash", "Gemini-Pro", "Groq-GPT-OSS-20B", "Ollama-Local"];
@@ -280,10 +282,17 @@ function ChatInterface() {
       if (!e.target.closest('.menu-toggle-btn') && !e.target.closest('.session-menu')) {
         setOpenMenuId(null);
       }
+      
+      // Close profile menu when clicking outside
+      if (profileMenuOpen && profileMenuRef.current && 
+          !profileMenuRef.current.contains(e.target) && 
+          !e.target.closest('.profile-menu-btn')) {
+        setProfileMenuOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [profileMenuOpen]);
 
   useEffect(() => {
     if (showModelOptions) {
@@ -566,18 +575,46 @@ function ChatInterface() {
           {authLoading ? (
             <div className="auth-loading">Loading...</div>
           ) : user ? (
-            <div className="user-profile">
-              {user.photoURL && (
-                <img src={user.photoURL} alt="Profile" className="user-avatar" />
-              )}
-              <div className="user-info">
-                <div className="user-name">{user.displayName || user.email}</div>
+            <div className="user-profile" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {user.photoURL && (
+                  <img src={user.photoURL} alt="Profile" className="user-avatar" />
+                )}
+                <div className="user-info">
+                  <div className="user-name">{user.displayName || user.email}</div>
+                </div>
+              </div>
+              <div className="profile-menu-container">
                 <button 
-                  className="sign-out-btn" 
-                  onClick={() => signOutUser()}
+                  className="profile-menu-btn" 
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }} 
+                  title="Menu"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 >
-                  <span style={{ marginRight: '3px' }}>↪</span> Sign Out
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+                    <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
+                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+                  </svg>
                 </button>
+                {profileMenuOpen && (
+                  <div className="profile-dropdown-menu" ref={profileMenuRef}>
+                    <button 
+                      className="profile-menu-item" 
+                      onClick={() => {
+                        signOutUser();
+                        setProfileMenuOpen(false);
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -736,7 +773,22 @@ function ChatInterface() {
           {/* Let's Code typing animation - only show when no messages and chat bar is centered */}
           {messages.length === 0 && chatBarPosition === "center" && (
             <div className="typing-container">
-              <div className="typing-text">Let's code</div>
+              <div className="typing-text">
+                {(() => {
+                  if (user) {
+                    // Prefer displayName, fallback to email
+                    let name = user.displayName || user.email || "";
+                    // If displayName is not set, extract from email before @
+                    if (!user.displayName && user.email) {
+                      name = user.email.split("@")[0];
+                    }
+                    // Use only the first word (first name)
+                    const firstName = name.split(" ")[0];
+                    return `Let's code ${firstName}`;
+                  }
+                  return "Let's code";
+                })()}
+              </div>
             </div>
           )}
           <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
