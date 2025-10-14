@@ -733,6 +733,12 @@ function ChatInterface() {
         </div>
 
         <div className="chat-scroll-area" ref={chatScrollAreaRef} style={{ overflowY: 'auto', maxHeight: 'calc(100% - 80px)' }}>
+          {/* Let's Code typing animation - only show when no messages and chat bar is centered */}
+          {messages.length === 0 && chatBarPosition === "center" && (
+            <div className="typing-container">
+              <div className="typing-text">Let's code</div>
+            </div>
+          )}
           <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
             {messages.map((message) => {
               // Debug logging for message language
