@@ -1,0 +1,72 @@
+/* Single, consolidated file for code block styling */
+
+/* Reset the container completely */
+.vs-code-container {
+  all: initial !important;
+  display: block !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 16px 0 !important;
+  padding: 0 !important;
+}
+
+/* Style only the pre element - this is where the actual code block appears */
+.vs-code-container pre {
+  display: block !important;
+  background-color: #1e1e1e !important;
+  border: 1px solid #444 !important;
+  border-radius: 6px !important;
+  padding: 12px !important;
+  margin: 0 !important;
+  overflow-x: auto !important;
+  font-family: 'Consolas', 'Courier New', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Line numbers */
+.vs-code-container .linenumber,
+.vs-code-container .react-syntax-highlighter-line-number {
+  color: #6e6e6e !important;
+  user-select: none !important;
+  border-right: 1px solid #333 !important;
+  margin-right: 16px !important;
+  padding-right: 12px !important;
+  min-width: 40px !important;
+  display: inline-block !important;
+  text-align: right !important;
+}
+
+/* Ensure code element has no background */
+.vs-code-container code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: 'Consolas', 'Courier New', monospace !important;
+}
+
+/* Clear any backgrounds from token lines */
+.vs-code-container .token-line {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Syntax highlighting colors */
+.vs-code-container .token.keyword { color: #569cd6 !important; }
+.vs-code-container .token.string { color: #ce9178 !important; }
+.vs-code-container .token.comment { color: #6a9955 !important; }
+.vs-code-container .token.function { color: #dcdcaa !important; }
+.vs-code-container .token.number { color: #b5cea8 !important; }
+.vs-code-container .token.operator { color: #d4d4d4 !important; }
+.vs-code-container .token.punctuation { color: #d4d4d4 !important; }
+.vs-code-container .token.property { color: #9cdcfe !important; }
+.vs-code-container .token.class-name { color: #4EC9B0 !important; }
+.vs-code-container .token.builtin { color: #569cd6 !important; }
+
+/* Selection styling */
+.vs-code-container ::selection {
+  background: rgba(121, 82, 179, 0.3) !important;
+}

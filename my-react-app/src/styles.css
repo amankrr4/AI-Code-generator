@@ -325,6 +325,11 @@ body {
   transform: translateX(4px);
 }
 
+/* Style for the active session - matches hover state background */
+.history-session.active {
+  background: var(--bg-tertiary);
+}
+
 
 .session-title {
   font-size: 12px;
@@ -872,22 +877,37 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* Scoped Prism styles */
+/* VS Code-like code styling */
 .code-wrapper pre {
-  background: #1e1e1e !important;
-  border-radius: 12px;
-  padding: 12px;
+  background: #1e1e1e !important; /* VS Code default background */
+  border-radius: 6px;
+  padding: 16px;
   margin: 0;
   overflow-x: auto;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Subtle shadow for depth */
+  border: 1px solid #333; /* Subtle border */
 }
 
 .code-wrapper code {
-  font-family: "Fira Code", monospace;
+  font-family: "'Cascadia Code', 'Fira Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace";
+  letter-spacing: 0.05em; /* Slightly increase letter spacing for readability */
 }
 
-/* Add this to the end of your styles.css file */
+/* Add line number styling for when line numbers are enabled */
+.code-wrapper .linenumber {
+  color: #858585; /* Dimmed color for line numbers */
+  min-width: 2em;
+  padding-right: 1em;
+  text-align: right;
+  user-select: none;
+  border-right: 1px solid #404040;
+  margin-right: 0.75em;
+}
+
+/* Import the single, consolidated code block styling file */
+@import './code-blocks.css';
 
 /* Loader Animation */
 .loader {

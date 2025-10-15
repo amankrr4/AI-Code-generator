@@ -13,20 +13,19 @@ import {
   getApiKey as getFirebaseApiKey
 } from './firebaseService';
 
-// Style object for the 'okaidia' theme, modified to be transparent and have a smaller font size
+// Style object for VS Code's default dark theme syntax highlighting
 const okaidiaStyle = {
   'code[class*="language-"]': {
-    color: '#f8f8f2',
+    color: '#d4d4d4', // VS Code default text color
     background: 'none',
-    textShadow: '0 1px rgba(0, 0, 0, 0.3)',
-    fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+    fontFamily: "'Cascadia Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace", // VS Code default font
     fontSize: '14px',
     textAlign: 'left',
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
     wordWrap: 'normal',
-    lineHeight: '1.4',
+    lineHeight: '1.5',
     MozTabSize: '4',
     OTabSize: '4',
     tabSize: '4',
@@ -36,17 +35,16 @@ const okaidiaStyle = {
     hyphens: 'none'
   },
   'pre[class*="language-"]': {
-    color: '#f8f8f2',
-    background: 'transparent',
-    textShadow: '0 1px rgba(0, 0, 0, 0.3)',
-    fontFamily: "Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace",
+    color: '#d4d4d4', // VS Code default text color
+    background: '#1e1e1e', // VS Code default background
+    fontFamily: "'Cascadia Code', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace", // VS Code default font
     fontSize: '14px',
     textAlign: 'left',
     whiteSpace: 'pre',
     wordSpacing: 'normal',
     wordBreak: 'normal',
     wordWrap: 'normal',
-    lineHeight: '1.4',
+    lineHeight: '1.5',
     MozTabSize: '4',
     OTabSize: '4',
     tabSize: '4',
@@ -54,48 +52,50 @@ const okaidiaStyle = {
     MozHyphens: 'none',
     msHyphens: 'none',
     hyphens: 'none',
-    padding: '0',
+    padding: '1em',
     margin: '0',
-    overflow: 'auto'
+    overflow: 'auto',
+    borderRadius: '6px'
   },
   ':not(pre) > code[class*="language-"]': {
-    background: '#272822',
+    background: '#1e1e1e',
     padding: '.1em',
     borderRadius: '.3em',
     whiteSpace: 'normal'
   },
-  'comment': { color: '#8292a2' },
-  'prolog': { color: '#8292a2' },
-  'doctype': { color: '#8292a2' },
-  'cdata': { color: '#8292a2' },
-  'punctuation': { color: '#f8f8f2' },
-  'namespace': { Opacity: '.7' },
-  'property': { color: '#f92672' },
-  'tag': { color: '#f92672' },
-  'constant': { color: '#f92672' },
-  'symbol': { color: '#f92672' },
-  'deleted': { color: '#f92672' },
-  'boolean': { color: '#ae81ff' },
-  'number': { color: '#ae81ff' },
-  'selector': { color: '#a6e22e' },
-  'attr-name': { color: '#a6e22e' },
-  'string': { color: '#a6e22e' },
-  'char': { color: '#a6e22e' },
-  'builtin': { color: '#a6e22e' },
-  'inserted': { color: '#a6e22e' },
-  'operator': { color: '#f8f8f2' },
-  'entity': { color: '#f8f8f2', cursor: 'help' },
-  'url': { color: '#f8f8f2' },
-  '.language-css .token.string': { color: '#f8f8f2' },
-  '.style .token.string': { color: '#f8f8f2' },
-  'variable': { color: '#f8f8f2' },
-  'atrule': { color: '#e6db74' },
-  'attr-value': { color: '#e6db74' },
-  'function': { color: '#e6db74' },
-  'class-name': { color: '#e6db74' },
-  'keyword': { color: '#66d9ef' },
-  'regex': { color: '#fd971f' },
-  'important': { color: '#fd971f', fontWeight: 'bold' },
+  // VS Code default dark theme token colors
+  'comment': { color: '#6A9955' }, // Green comments
+  'prolog': { color: '#6A9955' },
+  'doctype': { color: '#6A9955' },
+  'cdata': { color: '#6A9955' },
+  'punctuation': { color: '#d4d4d4' }, // Light gray
+  'namespace': { opacity: '.7' },
+  'property': { color: '#9CDCFE' }, // Light blue
+  'tag': { color: '#569CD6' }, // Blue
+  'constant': { color: '#4FC1FF' }, // Bright blue
+  'symbol': { color: '#4FC1FF' },
+  'deleted': { color: '#CE9178' }, // Orange-ish
+  'boolean': { color: '#569CD6' }, // Blue
+  'number': { color: '#B5CEA8' }, // Light green
+  'selector': { color: '#D7BA7D' }, // Light brown
+  'attr-name': { color: '#9CDCFE' }, // Light blue
+  'string': { color: '#CE9178' }, // Orange-ish
+  'char': { color: '#CE9178' },
+  'builtin': { color: '#DCDCAA' }, // Yellow-ish
+  'inserted': { color: '#b5cea8' },
+  'operator': { color: '#d4d4d4' }, // Default text
+  'entity': { color: '#4EC9B0', cursor: 'help' }, // Teal
+  'url': { color: '#d4d4d4' },
+  '.language-css .token.string': { color: '#CE9178' },
+  '.style .token.string': { color: '#CE9178' },
+  'variable': { color: '#9CDCFE' }, // Light blue
+  'atrule': { color: '#C586C0' }, // Purple
+  'attr-value': { color: '#CE9178' }, // Orange-ish
+  'function': { color: '#DCDCAA' }, // Yellow function names
+  'class-name': { color: '#4EC9B0' }, // Teal class names
+  'keyword': { color: '#569CD6' }, // Blue keywords
+  'regex': { color: '#D16969' }, // Red-ish
+  'important': { color: '#569CD6', fontWeight: 'bold' },
   'bold': { fontWeight: 'bold' },
   'italic': { fontStyle: 'italic' }
 };
@@ -812,14 +812,36 @@ function ChatInterface() {
                   </button>
                 )}
                 {message.type === "assistant" && message.language && message.language !== "plaintext" ? (
-                  <SyntaxHighlighter
-                    language={message.language.toLowerCase()}
-                    style={okaidiaStyle}
-                    wrapLongLines={true}
-                    showLineNumbers={false}
-                  >
-                    {message.content}
-                  </SyntaxHighlighter>
+                  <div className="vs-code-container">
+                    <SyntaxHighlighter
+                      language={message.language.toLowerCase()}
+                      style={okaidiaStyle}
+                      wrapLongLines={true}
+                      showLineNumbers={true}
+                      lineNumberStyle={{ 
+                        color: '#858585', 
+                        paddingRight: '16px',
+                        marginRight: '16px',
+                        borderRight: '1px solid #333',
+                        textAlign: 'right'
+                      }}
+                      customStyle={{ 
+                        background: '#1e1e1e',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        margin: '0',
+                      }}
+                      codeTagProps={{
+                        style: {
+                          fontFamily: "'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace",
+                          fontSize: '14px',
+                          lineHeight: '1.6'
+                        }
+                      }}
+                    >
+                      {message.content}
+                    </SyntaxHighlighter>
+                  </div>
                 ) : (
                   message.content
                 )}
