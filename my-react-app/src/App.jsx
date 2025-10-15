@@ -136,6 +136,7 @@ function ChatInterface() {
   const [user, setUser] = useState(null); // Firebase user
   const [authLoading, setAuthLoading] = useState(true); // Loading state for authentication
   const [profileMenuOpen, setProfileMenuOpen] = useState(false); // Track if profile menu is open
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false); // Track if logout confirmation is open
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -213,12 +214,15 @@ function ChatInterface() {
 
   useEffect(() => {
     const handleHover = (e) => {
-      if (e.clientX <= 10) setSidebarOpen(true);
-      else if (sidebarOpen && e.clientX > 240) setSidebarOpen(false);
+      // Don't respond to hover events if the logout confirmation dialog is open
+      if (!showLogoutConfirmation) {
+        if (e.clientX <= 10) setSidebarOpen(true);
+        else if (sidebarOpen && e.clientX > 240) setSidebarOpen(false);
+      }
     };
     window.addEventListener("mousemove", handleHover);
     return () => window.removeEventListener("mousemove", handleHover);
-  }, [sidebarOpen]);
+  }, [sidebarOpen, showLogoutConfirmation]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -602,8 +606,9 @@ function ChatInterface() {
                     <button 
                       className="profile-menu-item" 
                       onClick={() => {
-                        signOutUser();
+                        setShowLogoutConfirmation(true);
                         setProfileMenuOpen(false);
+                        setSidebarOpen(false); // Close sidebar when logout dialog appears
                       }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -858,6 +863,40 @@ function ChatInterface() {
           </div>
         </div>
       </div>
+      
+      {/* Logout confirmation dialog */}
+      {showLogoutConfirmation && (
+        <div 
+          className="modal-overlay"
+          onClick={(e) => {
+            // Prevent clicks on the overlay from closing the dialog
+            e.stopPropagation();
+          }}
+        >
+          <div className="logout-confirmation-dialog" onClick={(e) => e.stopPropagation()}>
+            <h2>Are you sure</h2>
+               <h2>you want to log out?</h2>
+            <p>Log out as {user && (user.email || "your account")}?</p>
+            <div className="logout-buttons">
+              <button 
+                className="cancel-button" 
+                onClick={() => setShowLogoutConfirmation(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="logout-button" 
+                onClick={() => {
+                  signOutUser();
+                  setShowLogoutConfirmation(false);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

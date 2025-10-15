@@ -312,8 +312,8 @@ body {
   display: flex;
   padding: 6px 8px;
   border-radius: 6px;
-  background: var(--bg-tertiary);
-  margin-bottom: 6px;
+  background: var(--bg-secondary); /* Updated to match sidebar background color */
+  margin-bottom: 0; /* Removed the gap between items */
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid transparent;
@@ -321,7 +321,7 @@ body {
 }
 
 .history-session:hover {
-  background: var(--hover-bg);
+  background: var(--bg-tertiary); /* Keeps the hover state as gray */
   transform: translateX(4px);
 }
 
@@ -1166,5 +1166,80 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Logout confirmation dialog styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
+  /* Ensures the overlay captures all mouse events */
+  pointer-events: all;
+}
+
+.logout-confirmation-dialog {
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.logout-confirmation-dialog h2 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.logout-confirmation-dialog p {
+  color: #aaa;
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+.logout-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cancel-button, .logout-button {
+  padding: 12px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: #ffffff;
+  border: 1px solid #444;
+}
+
+.cancel-button:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.logout-button {
+  background-color: #ffffff;
+  color: #000; /* Changed from white (#fff) to black (#000) */
+}
+
+.logout-button:hover {
+  background-color: #ffaca3;
 }
 
