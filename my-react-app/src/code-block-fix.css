@@ -38,9 +38,9 @@ span[style*="background"],
   background-color: transparent !important;
 }
 
-/* Add a subtle border around the pre but not around the container */
+/* Remove border around the pre */
 .vs-code-container pre {
-  border: 1px solid #333 !important;
+  border: none !important;
 }
 
 /* Make the container fully transparent */

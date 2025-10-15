@@ -826,10 +826,11 @@ function ChatInterface() {
                         textAlign: 'right'
                       }}
                       customStyle={{ 
-                        background: '#181818',
-                        borderRadius: '8px',
+                        background: 'transparent',
+                        borderRadius: '0',
                         padding: '16px',
                         margin: '0',
+                        border: 'none'
                       }}
                       codeTagProps={{
                         style: {

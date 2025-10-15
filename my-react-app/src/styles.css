@@ -1,4 +1,9 @@
 /* src/styles.css */
+/* Import the single, consolidated code block styling file */
+@import './code-blocks.css';
+/* Import the fix for code block backgrounds */
+@import './code-block-fix.css';
+
 /* LED Dot Matrix font */
 @font-face {
   font-family: 'LED Dot Matrix';
@@ -905,11 +910,6 @@ body {
   border-right: 1px solid #404040;
   margin-right: 0.75em;
 }
-
-/* Import the single, consolidated code block styling file */
-@import './code-blocks.css';
-/* Import the fix for code block backgrounds */
-@import './code-block-fix.css';
 
 /* Loader Animation */
 .loader {
