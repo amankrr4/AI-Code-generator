@@ -471,7 +471,7 @@ body {
 .message pre {
   white-space: pre-wrap;
   font-family: monospace;
-  background: var(--bg-tertiary);
+  background: var(--ai-msg-bg); /* Changed to match the assistant message background */
   padding: 12px;
   border-radius: 12px;
   overflow-x: auto;
@@ -587,7 +587,7 @@ body {
   top: 100%;
   margin-top: 8px;
   width: 280px;
-  background: #1e1e1e;
+  background: #181818;
   border: 1px solid #444;
   border-radius: 16px;
   padding: 16px;
@@ -879,7 +879,7 @@ body {
 
 /* VS Code-like code styling */
 .code-wrapper pre {
-  background: #1e1e1e !important; /* VS Code default background */
+  background: #181818 !important; /* Updated to match assistant message background */
   border-radius: 6px;
   padding: 16px;
   margin: 0;
@@ -908,6 +908,8 @@ body {
 
 /* Import the single, consolidated code block styling file */
 @import './code-blocks.css';
+/* Import the fix for code block backgrounds */
+@import './code-block-fix.css';
 
 /* Loader Animation */
 .loader {

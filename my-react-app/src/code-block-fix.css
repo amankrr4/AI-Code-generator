@@ -1,0 +1,68 @@
+/* Force same background color for all code blocks */
+.message pre,
+.vs-code-container,
+.vs-code-container pre,
+.vs-code-container code,
+.vs-code-container div,
+.vs-code-container span,
+.code-wrapper pre,
+.code-wrapper,
+pre[class*="language-"],
+code[class*="language-"],
+.token-line,
+.syntax-highlighter-pre,
+.react-syntax-highlighter-line-number,
+div[style*="background"],
+span[style*="background"],
+.react-syntax-highlighter,
+.react-syntax-highlighter-code-block,
+.react-syntax-highlighter > pre {
+  background-color: #181818 !important;
+  background: #181818 !important;
+  background-image: none !important;
+}
+
+/* Special override for token lines to ensure no backgrounds */
+.vs-code-container .token-line,
+.vs-code-container pre .token-line,
+.token-line {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Important: Set the line numbers with !important to override any existing styles */
+.vs-code-container .linenumber,
+.vs-code-container .react-syntax-highlighter-line-number {
+  color: #6e6e6e !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Add a subtle border around the pre but not around the container */
+.vs-code-container pre {
+  border: 1px solid #333 !important;
+}
+
+/* Make the container fully transparent */
+.vs-code-container {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Override any inline styles that might be applied by the syntax highlighter */
+[data-language] *,
+[class*="language-"] *,
+[class*="syntax"] * {
+  background: #181818 !important;
+  background-color: #181818 !important;
+}
+
+/* Direct override for SyntaxHighlighter component */
+.message.assistant .vs-code-container pre,
+.react-syntax-highlighter pre,
+.message.assistant pre[class*="language-"] {
+  background: #181818 !important;
+  background-color: #181818 !important;
+  color: #d4d4d4;
+}

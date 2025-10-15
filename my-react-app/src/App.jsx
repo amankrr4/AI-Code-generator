@@ -826,7 +826,7 @@ function ChatInterface() {
                         textAlign: 'right'
                       }}
                       customStyle={{ 
-                        background: '#1e1e1e',
+                        background: '#181818',
                         borderRadius: '8px',
                         padding: '16px',
                         margin: '0',
