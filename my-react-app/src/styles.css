@@ -447,15 +447,20 @@ body {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: var(--text-secondary);
+  background: var(--button-bg, #353434);
+  border: none;
+  border-radius: var(--button-border-radius, 10px);
+  width: var(--button-diameter, 36px);
+  height: var(--button-diameter, 36px);
+  color: var(--button-text-color, #CCCCCC);
   font-size: 12px;
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s ease;
+  outline: var(--button-outline-width, 1px) solid var(--button-outline-color, rgb(141, 141, 141));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .message.assistant:hover .copy-btn {
@@ -463,9 +468,8 @@ body {
 }
 
 .message.assistant .copy-btn:hover {
-  background: var(--accent);
-  color: white;
-  transform: scale(1.05);
+  background: var(--button-hover-bg, #464646);
+  color: var(--button-hover-text-color, #8bb9fe);
 }
 
 .message.assistant .copy-btn.copied {
@@ -1265,3 +1269,123 @@ body {
   background-color: #ffaca3;
 }
 
+.copy {
+  /* button */
+  --button-bg: #353434;
+  --button-hover-bg: #464646;
+  --button-text-color: #CCCCCC;
+  --button-hover-text-color: #8bb9fe;
+  --button-border-radius: 10px;
+  
+  --button-outline-width: 1px;
+  --button-outline-color: rgb(141, 141, 141);
+  /* tooltip */
+  --tooltip-bg: #2a2a2a;
+  --toolptip-border-radius: 4px;
+  --tooltip-font-family: Menlo, Roboto Mono, monospace;
+  --tooltip-font-size: 12px;
+  --tootip-text-color: #b0b0b0;
+  --tooltip-padding-x: 7px;
+  --tooltip-padding-y: 7px;
+  --tooltip-offset: 8px;
+
+ 
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  box-sizing: border-box;
+  width: var(--button-diameter);
+  height: var(--button-diameter);
+  border-radius: var(--button-border-radius);
+  background-color: var(--button-bg);
+  color: var(--button-text-color);
+  border: none;
+  cursor: pointer;
+  outline: none;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.message.assistant:hover .copy {
+  opacity: 1;
+}
+
+.tooltip {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  bottom: -30px; /* Position below the button instead of above */
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: var(--tooltip-font-size, 12px) var(--tooltip-font-family, Menlo, Roboto Mono, monospace);
+  color: var(--tootip-text-color, #b0b0b0);
+  background: var(--tooltip-bg, #2a2a2a);
+  border: 1px solid var(--border-color, #3a3a3a);
+  padding: var(--tooltip-padding-y, 7px) var(--tooltip-padding-x, 7px);
+  border-radius: var(--toolptip-border-radius, 4px);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 1000;
+}
+
+.tooltip::before {
+  content: attr(data-text-initial);
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--tooltip-padding-y, 7px) / 2 * -1); /* Arrow on top for tooltip below */
+  width: var(--tooltip-padding-y, 7px);
+  height: var(--tooltip-padding-y, 7px);
+  background: inherit;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  z-index: -999;
+  pointer-events: none;
+}
+
+.copy svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.checkmark {
+  display: none;
+}
+
+/* actions */
+.copy:hover .tooltip,
+.copy:focus:not(:focus-visible) .tooltip {
+  opacity: 1;
+  visibility: visible;
+  bottom: -40px; /* Show slightly lower when visible */
+}
+
+.copy:focus:not(:focus-visible) .tooltip::before {
+  content: attr(data-text-end);
+}
+
+.copy:focus:not(:focus-visible) .clipboard {
+  display: none;
+}
+
+.copy:focus:not(:focus-visible) .checkmark {
+  display: block;
+}
+
+.copy:hover,
+.copy:focus {
+  background-color: var(--button-hover-bg);
+}
+
+.copy:active {
+  outline: var(--button-outline-width) solid var(--button-outline-color);
+}
+
+.copy:hover svg {
+  color: var(--button-hover-text-color);
+}

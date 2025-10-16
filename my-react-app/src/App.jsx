@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { db, auth, googleProvider } from './firebase';
+// Import directly from firebaseService
 import { 
   signInWithGoogle,
   signOutUser,
@@ -12,6 +13,9 @@ import {
   saveApiKey as saveFirebaseApiKey,
   getApiKey as getFirebaseApiKey
 } from './firebaseService';
+
+// Import the debug function from firebaseAuth
+import { debugFirebaseConfig } from './firebaseAuth';
 
 // Style object for VS Code's default dark theme syntax highlighting
 const okaidiaStyle = {
@@ -113,7 +117,15 @@ function ChatInterface() {
     try {
       await navigator.clipboard.writeText(content);
       setCopiedMessageId(content);
-      setTimeout(() => setCopiedMessageId(null), 2000);
+      
+      // Set focus to activate the button's :focus-visible state
+      document.activeElement.blur();
+      document.querySelector(`.copy[data-content="${content}"]`)?.focus();
+      
+      setTimeout(() => {
+        setCopiedMessageId(null);
+        document.querySelector(`.copy[data-content="${content}"]`)?.blur();
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -239,9 +251,27 @@ function ChatInterface() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Debug authentication status
+  const debugAuth = () => {
+    console.log("Auth object:", auth);
+    console.log("GoogleProvider:", googleProvider);
+    console.log("Current user:", auth.currentUser);
+    
+    // Check if popup redirect is working
+    try {
+      debugFirebaseConfig();
+    } catch (err) {
+      console.error("Error in debugFirebaseConfig:", err);
+    }
+  };
+
   // Firebase authentication listener
   useEffect(() => {
+    // Debug authentication status
+    debugAuth();
+    
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      console.log("Auth state changed, user:", currentUser);
       setUser(currentUser);
       setAuthLoading(false);
       
@@ -625,7 +655,33 @@ function ChatInterface() {
           ) : (
             <button 
               className="sign-in-btn" 
-              onClick={() => signInWithGoogle().catch(err => console.log(err))}
+              onClick={() => {
+                console.log("Sign in button clicked");
+                
+                // Debug Firebase first
+                debugAuth();
+                
+                try {
+                  signInWithGoogle()
+                    .then(user => {
+                      console.log("Sign in successful:", user);
+                    })
+                    .catch(err => {
+                      console.error("Sign in error:", err);
+                      // More user-friendly error message
+                      if (err.code === 'auth/popup-blocked') {
+                        alert("Sign-in popup was blocked by your browser. Please allow popups for this site and try again.");
+                      } else if (err.code === 'auth/popup-closed-by-user') {
+                        console.log("Popup closed by user - no alert needed");
+                      } else {
+                        alert("Sign-in failed: " + (err.message || "Unknown error"));
+                      }
+                    });
+                } catch (err) {
+                  console.error("Error calling signInWithGoogle:", err);
+                  alert("Failed to initialize sign-in process. Please check the console for more details.");
+                }
+              }}
             >
               <span className="google-icon">
                 <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -805,10 +861,18 @@ function ChatInterface() {
               <div key={message.id} className={`message ${message.type}`}>
                 {message.type === "assistant" && (
                   <button
-                    className={`copy-btn ${copiedMessageId === message.content ? 'copied' : ''}`}
+                    className={`copy ${copiedMessageId === message.content ? 'focus' : ''}`}
                     onClick={() => handleCopy(message.content)}
+                    data-content={message.content}
                   >
-                    {copiedMessageId === message.content ? '✓ Copied' : 'Copy'}
+                    <span className="tooltip" data-text-initial="Copy" data-text-end="Copied!"></span>
+                    <svg className="clipboard" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                      <path d="M9.5 1h-3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                    <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
                   </button>
                 )}
                 {message.type === "assistant" && message.language && message.language !== "plaintext" ? (
