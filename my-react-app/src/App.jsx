@@ -480,8 +480,7 @@ function ChatInterface() {
         }
         addMessage(errorMessage, "assistant", "plaintext");
       } finally {
-        // Always reset loading state when the request completes or fails
-        // The abort case is handled separately in the catch block
+        
         setLoading(false); // Hide loading indicator
       }
     }
@@ -928,8 +927,21 @@ function ChatInterface() {
         <div className={`input-container chat-bar ${chatBarPosition === "center" ? "center" : "bottom"}`} style={{ border: 'none', boxShadow: 'none' }}>
           <div className="input-wrapper">
             <textarea
-              ref={textareaRef} rows={1} className="message-input" placeholder="Ask anything..."
-              value={inputValue} onChange={(e) => setInputValue(e.target.value.replace(/^\n/, ""))}
+              ref={textareaRef} 
+              rows={1} 
+              className="message-input" 
+              placeholder="Ask anything..."
+              value={inputValue} 
+              onChange={(e) => setInputValue(e.target.value.replace(/^\n/, ""))}
+              onKeyDown={(e) => {
+                // Send message when Enter is pressed (without Shift)
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault(); // Prevent new line
+                  if (inputValue.trim()) {
+                    sendMessage();
+                  }
+                }
+              }}
             />
             <div className="language-dropdown-wrapper" ref={languageDropdownRef}>
               <div className="language-dropdown-selected" onClick={() => setShowLanguageOptions(!showLanguageOptions)}>
