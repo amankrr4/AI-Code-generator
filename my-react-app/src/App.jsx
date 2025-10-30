@@ -610,6 +610,25 @@ function ChatInterface() {
           ) : user ? (
             <div className="user-profile" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#4285F4',
+                  color: 'white',
+                  fontSize: '22px',
+                  fontWeight: '600',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  borderRadius: '50%',
+                  marginRight: '12px',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                  border: '2px solid rgba(255, 255, 255, 0.1)',
+                  letterSpacing: '0.5px'
+                }}>
+                  {(user.email || '?').charAt(0).toUpperCase()}
+                </div>
                 <div className="user-info">
                   <div className="user-name">{user.displayName || user.email}</div>
                 </div>
