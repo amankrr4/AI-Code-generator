@@ -620,6 +620,32 @@ body {
   transform: scale(0.95);
 }
 
+/* Sidebar Toggle Button - Matching Model Selector Style */
+.sidebar-toggle-wrapper {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 50;
+}
+
+.sidebar-toggle-btn {
+  background: #2d2d2d;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 8px 14px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s ease;
+}
+
+.sidebar-toggle-btn:hover {
+  background: #3a3a3a;
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.95);
+}
+
 /* Dropdown Panel */
 .model-selector-panel {
   position: absolute;
@@ -1419,4 +1445,65 @@ body {
 
 .copy:hover svg {
   color: var(--button-hover-text-color);
+}
+
+/* Top Buttons (Sidebar Toggle & New Chat) */
+.top-buttons-wrapper {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 50;
+  display: flex;
+  background-color: #2f2f2f;
+  border-radius: 50px;
+  padding: 2px;
+  gap: 0;
+  align-items: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Hide buttons when sidebar is open */
+.main-content.sidebar-open .top-buttons-wrapper {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sidebar-toggle {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-radius: 50px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  color: #e5e5e5;
+}
+
+.sidebar-toggle:hover {
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.newchat-btn {
+  background-color: transparent;
+  border: none;
+  outline: none;
+  border-radius: 50px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  color: #e5e5e5;
+}
+
+.newchat-btn:hover {
+  background-color: #3a3a3a;
+  color: #ffffff;
 }
