@@ -136,7 +136,7 @@ function TypewriterText({ content, isCode = false, language = 'javascript' }) {
             key={index}
             style={{
               opacity: 0,
-              animation: `fadeInLine 0.3s ease-out ${index * 0.1}s forwards`,
+              animation: `fadeInLine 0.5s ease-out ${index * 0.3}s forwards`,
               display: 'flex'
             }}
           >
@@ -162,7 +162,7 @@ function TypewriterText({ content, isCode = false, language = 'javascript' }) {
           key={index}
           style={{
             opacity: 0,
-            animation: `fadeInLine 0.2s ease-out ${index * 0.05}s forwards`
+            animation: `fadeInLine 0.4s ease-out ${index * 0.15}s forwards`
           }}
         >
           {line}
@@ -443,14 +443,21 @@ function ChatInterface() {
     // Track new message for animation
     setNewMessageIds((prev) => new Set([...prev, messageId]));
 
-    // Remove animation after a delay
+    // Calculate animation duration based on content length
+    const lines = safeContent.split('\n');
+    const isCodeContent = language && language !== "plaintext";
+    const baseDelay = isCodeContent ? 300 : 150; // ms per line
+    const animationDuration = isCodeContent ? 500 : 400; // ms for each line animation
+    const totalDuration = (lines.length * baseDelay) + animationDuration + 500; // Extra 500ms buffer
+
+    // Remove animation after calculated duration
     setTimeout(() => {
       setNewMessageIds((prev) => {
         const updated = new Set(prev);
         updated.delete(messageId);
         return updated;
       });
-    }, 500); // Remove after animation completes
+    }, totalDuration);
 
     // If user is logged in, save message to Firebase
     if (user && currentSessionId) {
