@@ -104,6 +104,74 @@ const okaidiaStyle = {
   'italic': { fontStyle: 'italic' }
 };
 
+// Simple typewriter component that displays full content with CSS animation
+function TypewriterText({ content, isCode = false, language = 'javascript' }) {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Small delay to trigger the animation
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [content]);
+
+  const containerStyle = {
+    opacity: isVisible ? 1 : 0,
+    animation: isVisible ? 'typewriterSlideIn 0.8s ease-out' : 'none',
+    fontFamily: isCode ? "'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace" : 'inherit',
+    fontSize: isCode ? '14px' : 'inherit',
+    lineHeight: isCode ? '1.6' : 'inherit',
+    padding: isCode ? '16px' : '0',
+    color: isCode ? '#d4d4d4' : 'inherit',
+    whiteSpace: 'pre-wrap'
+  };
+
+  if (isCode && language && language !== 'plaintext') {
+    return (
+      <div style={containerStyle}>
+        {content.split('\n').map((line, index) => (
+          <div 
+            key={index}
+            style={{
+              opacity: 0,
+              animation: `fadeInLine 0.3s ease-out ${index * 0.1}s forwards`,
+              display: 'flex'
+            }}
+          >
+            <span style={{ 
+              color: '#858585', 
+              marginRight: '16px',
+              minWidth: '20px',
+              textAlign: 'right'
+            }}>
+              {index + 1}
+            </span>
+            <span>{line}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div style={containerStyle}>
+      {content.split('\n').map((line, index) => (
+        <div 
+          key={index}
+          style={{
+            opacity: 0,
+            animation: `fadeInLine 0.2s ease-out ${index * 0.05}s forwards`
+          }}
+        >
+          {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ChatInterface() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -149,6 +217,7 @@ function ChatInterface() {
   const [authLoading, setAuthLoading] = useState(true); // Loading state for authentication
   const [profileMenuOpen, setProfileMenuOpen] = useState(false); // Track if profile menu is open
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false); // Track if logout confirmation is open
+  const [newMessageIds, setNewMessageIds] = useState(new Set()); // Track new messages for animation
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -370,6 +439,18 @@ function ChatInterface() {
     
     // Update UI immediately
     setMessages((prev) => [...prev, newMessage]);
+
+    // Track new message for animation
+    setNewMessageIds((prev) => new Set([...prev, messageId]));
+
+    // Remove animation after a delay
+    setTimeout(() => {
+      setNewMessageIds((prev) => {
+        const updated = new Set(prev);
+        updated.delete(messageId);
+        return updated;
+      });
+    }, 500); // Remove after animation completes
 
     // If user is logged in, save message to Firebase
     if (user && currentSessionId) {
@@ -618,8 +699,8 @@ function ChatInterface() {
                   justifyContent: 'center',
                   backgroundColor: '#4285F4',
                   color: 'white',
-                  fontSize: '22px',
-                  fontWeight: '600',
+                  fontSize: '24px',
+                  fontWeight: '300',
                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                   borderRadius: '50%',
                   marginRight: '12px',
@@ -872,8 +953,11 @@ function ChatInterface() {
               // Debug logging for message language
               console.log(`Message ID ${message.id} Type: ${message.type} Language: ${message.language}`);
               
+              const isNewMessage = newMessageIds.has(message.id);
+              const isNewAssistantMessage = isNewMessage && message.type === 'assistant';
+              
               return (
-              <div key={message.id} className={`message ${message.type}`}>
+              <div key={message.id} className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
                 {message.type === "assistant" && (
                   <button
                     className={`copy ${copiedMessageId === message.content ? 'focus' : ''}`}
@@ -890,40 +974,50 @@ function ChatInterface() {
                     </svg>
                   </button>
                 )}
-                {message.type === "assistant" && message.language && message.language !== "plaintext" ? (
-                  <div className="vs-code-container">
-                    <SyntaxHighlighter
-                      language={message.language.toLowerCase()}
-                      style={okaidiaStyle}
-                      wrapLongLines={true}
-                      showLineNumbers={true}
-                      lineNumberStyle={{ 
-                        color: '#858585', 
-                        paddingRight: '16px',
-                        marginRight: '16px',
-                        borderRight: '1px solid #333',
-                        textAlign: 'right'
-                      }}
-                      customStyle={{ 
-                        background: 'transparent',
-                        borderRadius: '0',
-                        padding: '16px',
-                        margin: '0',
-                        border: 'none'
-                      }}
-                      codeTagProps={{
-                        style: {
-                          fontFamily: "'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace",
-                          fontSize: '14px',
-                          lineHeight: '1.6'
-                        }
-                      }}
-                    >
-                      {message.content}
-                    </SyntaxHighlighter>
-                  </div>
+                {isNewAssistantMessage ? (
+                  // Show typewriter effect for new assistant messages only
+                  <TypewriterText 
+                    content={message.content} 
+                    isCode={message.language && message.language !== "plaintext"} 
+                    language={message.language}
+                  />
                 ) : (
-                  message.content
+                  // Show normal rendering for existing messages
+                  message.type === "assistant" && message.language && message.language !== "plaintext" ? (
+                    <div className="vs-code-container">
+                      <SyntaxHighlighter
+                        language={message.language.toLowerCase()}
+                        style={okaidiaStyle}
+                        wrapLongLines={true}
+                        showLineNumbers={true}
+                        lineNumberStyle={{ 
+                          color: '#858585', 
+                          paddingRight: '16px',
+                          marginRight: '16px',
+                          borderRight: '1px solid #333',
+                          textAlign: 'right'
+                        }}
+                        customStyle={{ 
+                          background: 'transparent',
+                          borderRadius: '0',
+                          padding: '16px',
+                          margin: '0',
+                          border: 'none'
+                        }}
+                        codeTagProps={{
+                          style: {
+                            fontFamily: "'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace",
+                            fontSize: '14px',
+                            lineHeight: '1.6'
+                          }
+                        }}
+                      >
+                        {message.content}
+                      </SyntaxHighlighter>
+                    </div>
+                  ) : (
+                    message.content
+                  )
                 )}
               </div>
             );
