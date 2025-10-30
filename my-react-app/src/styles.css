@@ -25,7 +25,7 @@
   --text-primary: #ffffff;
   --text-secondary: #b0b0b0;
   --accent: #10a37f;
-  --user-msg-bg: #106c18;
+  --user-msg-bg: #033a0e;
   --ai-msg-bg: #181818;
   --border-color: #3a3a3a;
   --hover-bg: #171717;
@@ -1365,6 +1365,32 @@ body {
 
 .message.assistant:hover .copy {
   opacity: 1;
+}
+
+/* User message copy button - positioned outside to the left */
+.copy.user-copy {
+  top: 28px;
+  left: -18px;
+  right: auto;
+  transition: all 0.2s ease, opacity 0.3s ease 0.5s; /* Added delay to opacity transition */
+}
+
+/* Create a hover bridge area between message and copy button */
+.copy.user-copy::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -10px;
+  width: 30px;
+  height: calc(100% + 20px);
+  background: transparent;
+  z-index: -1;
+}
+
+.message.user:hover .copy.user-copy,
+.copy.user-copy:hover {
+  opacity: 1;
+  transition: all 0.2s ease; /* Remove delay when hovering */
 }
 
 .tooltip {
