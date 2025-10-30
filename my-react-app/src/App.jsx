@@ -610,9 +610,6 @@ function ChatInterface() {
           ) : user ? (
             <div className="user-profile" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                {user.photoURL && (
-                  <img src={user.photoURL} alt="Profile" className="user-avatar" />
-                )}
                 <div className="user-info">
                   <div className="user-name">{user.displayName || user.email}</div>
                 </div>

@@ -71,7 +71,6 @@ export const signInWithGoogle = async () => {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName || '',
-          photoURL: user.photoURL || '',
           lastLogin: serverTimestamp()
         }, { merge: true });
         console.log("User saved to Firestore successfully");

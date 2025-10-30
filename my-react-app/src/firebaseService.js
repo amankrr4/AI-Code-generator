@@ -53,7 +53,6 @@ export const signInWithGoogle = async () => {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName || '',
-          photoURL: user.photoURL || '',
           lastLogin: serverTimestamp()
         }, { merge: true });
         console.log("User saved to Firestore successfully");
@@ -134,7 +133,6 @@ export const saveUserToFirestore = async (user, additionalData = {}) => {
       uid: user.uid,
       email: user.email || '',
       displayName: user.displayName || additionalData.displayName || '',
-      photoURL: user.photoURL || '',
       lastLogin: serverTimestamp(),
       ...additionalData
     }, { merge: true }); // merge: true means it will update existing fields and add new ones
