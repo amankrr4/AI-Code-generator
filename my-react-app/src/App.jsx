@@ -172,7 +172,23 @@ function TypewriterText({ content, isCode = false, language = 'javascript' }) {
   );
 }
 
+// Language mapping for Prism.js compatibility
+const mapLanguageForSyntaxHighlighter = (language) => {
+  const languageMap = {
+    'c++': 'cpp',
+    'c#': 'csharp',
+    'objective-c': 'objectivec',
+    'shell': 'bash',
+    'sh': 'bash'
+  };
+  
+  if (!language) return 'javascript';
+  const lowerLang = language.toLowerCase();
+  return languageMap[lowerLang] || lowerLang;
+};
+
 function ChatInterface() {
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [chatSessions, setChatSessions] = useState([]);
@@ -1010,9 +1026,9 @@ function ChatInterface() {
                   message.type === "assistant" && message.language && message.language !== "plaintext" ? (
                     <div className="vs-code-container">
                       <SyntaxHighlighter
-                        language={message.language.toLowerCase()}
+                        language={mapLanguageForSyntaxHighlighter(message.language)}
                         style={okaidiaStyle}
-                        wrapLongLines={true}
+                        wrapLongLines={false}
                         showLineNumbers={true}
                         lineNumberStyle={{ 
                           color: '#858585', 
@@ -1026,7 +1042,13 @@ function ChatInterface() {
                           borderRadius: '0',
                           padding: '16px',
                           margin: '0',
-                          border: 'none'
+                          border: 'none',
+                          overflowX: 'auto',
+                          overflowY: 'visible',
+                          whiteSpace: 'pre',
+                          wordWrap: 'normal',
+                          wordBreak: 'normal',
+                          maxWidth: 'none'
                         }}
                         codeTagProps={{
                           style: {

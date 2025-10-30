@@ -1507,3 +1507,45 @@ body {
   background-color: #3a3a3a;
   color: #ffffff;
 }
+
+/* VS Code Container - Proper Code Formatting */
+.vs-code-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  max-width: 100%;
+  /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.vs-code-container::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for WebKit browsers */
+}
+
+.vs-code-container pre {
+  overflow-x: auto !important;
+  overflow-y: visible;
+  white-space: pre !important;
+  word-wrap: normal !important;
+  word-break: normal !important;
+  max-width: none !important;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace !important;
+  tab-size: 2;
+  /* Hide scrollbar for pre element as well */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.vs-code-container pre::-webkit-scrollbar {
+  display: none; /* Hide scrollbar for WebKit browsers */
+}
+
+.vs-code-container code {
+  white-space: pre !important;
+  word-wrap: normal !important;
+  word-break: normal !important;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, Monaco, monospace !important;
+  max-width: none !important;
+  display: block;
+}
