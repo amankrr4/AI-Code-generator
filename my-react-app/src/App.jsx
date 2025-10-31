@@ -190,9 +190,32 @@ const mapLanguageForSyntaxHighlighter = (language) => {
 function ChatInterface() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const [chatSessions, setChatSessions] = useState([]);
-  const [currentSessionId, setCurrentSessionId] = useState(Date.now());
+  const [messages, setMessages] = useState(() => {
+    // Load messages from localStorage on initial load
+    try {
+      const savedMessages = localStorage.getItem('currentMessages');
+      return savedMessages ? JSON.parse(savedMessages) : [];
+    } catch (error) {
+      console.error("Error loading messages from localStorage:", error);
+      return [];
+    }
+  });
+  
+  const [chatSessions, setChatSessions] = useState(() => {
+    // Load chat sessions from localStorage on initial load
+    try {
+      const savedSessions = localStorage.getItem('chatSessions');
+      return savedSessions ? JSON.parse(savedSessions) : [];
+    } catch (error) {
+      console.error("Error loading chat sessions from localStorage:", error);
+      return [];
+    }
+  });
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    // Load current session ID from localStorage
+    const savedSessionId = localStorage.getItem('currentSessionId');
+    return savedSessionId ? parseInt(savedSessionId) : Date.now();
+  });
   const [inputValue, setInputValue] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -215,12 +238,24 @@ function ChatInterface() {
     }
   };
 
-  const [selectedModel, setSelectedModel] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  const [selectedModel, setSelectedModel] = useState(() => {
+    // Load selected model from localStorage on initial load
+    return localStorage.getItem('selectedModel') || "";
+  });
+  const [apiKey, 
+    setApiKey] = useState(() => {
+    // Load API key from localStorage on initial load
+    const savedApiKey = localStorage.getItem('apiKey') || "";
+    console.log("Initial API key load from localStorage:", savedApiKey ? "Key found" : "No key found");
+    return savedApiKey;
+  });
   const [showSelector, setShowSelector] = useState(false);
   const [showModelOptions, setShowModelOptions] = useState(false);
   const [hasModelOptionsOpened, setHasModelOptionsOpened] = useState(false);
-  const [selectedOllamaModel, setSelectedOllamaModel] = useState("");
+  const [selectedOllamaModel, setSelectedOllamaModel] = useState(() => {
+    // Load selected Ollama model from localStorage on initial load
+    return localStorage.getItem('selectedOllamaModel') || "";
+  });
   const [showOllamaOptions, setShowOllamaOptions] = useState(false);
   const [hasOllamaOptionsOpened, setHasOllamaOptionsOpened] = useState(false);
   const [ollamaStatus, setOllamaStatus] = useState(null);
@@ -242,15 +277,26 @@ function ChatInterface() {
     return import.meta.env.VITE_API_URL || 'https://your-railway-backend-url.railway.app';
   };
   
-  // Load user's API keys from Firebase
+  // Load user's API keys from Firebase (only if not already in localStorage)
   const loadApiKeys = async (userId) => {
     if (!userId) return;
     
     try {
-      // Load OpenAI API key
-      const openaiKey = await getFirebaseApiKey(userId, 'openai');
-      if (openaiKey) {
-        setApiKey(openaiKey);
+      console.log("Loading API keys for user:", userId);
+      
+      // Only load from Firebase if not already present locally
+      const localApiKey = localStorage.getItem('apiKey');
+      if (!localApiKey) {
+        // Load OpenAI API key from Firebase
+        const openaiKey = await getFirebaseApiKey(userId, 'openai');
+        console.log("Loaded OpenAI key from Firebase:", openaiKey ? "Key found" : "No key found");
+        if (openaiKey) {
+          setApiKey(openaiKey);
+          // Also save to localStorage for future use
+          localStorage.setItem('apiKey', openaiKey);
+        }
+      } else {
+        console.log("API key already loaded from localStorage");
       }
       
     } catch (error) {
@@ -329,6 +375,60 @@ function ChatInterface() {
     }
   }, [sidebarOpen]);
 
+  // Save selected model to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedModel) {
+      localStorage.setItem('selectedModel', selectedModel);
+    }
+  }, [selectedModel]);
+
+  // Save selected Ollama model to localStorage whenever it changes
+  useEffect(() => {
+    if (selectedOllamaModel) {
+      localStorage.setItem('selectedOllamaModel', selectedOllamaModel);
+    }
+  }, [selectedOllamaModel]);
+
+  // Save API key to localStorage whenever it changes (but don't save empty strings)
+  useEffect(() => {
+    if (apiKey && apiKey.trim() !== "") {
+      localStorage.setItem('apiKey', apiKey);
+      console.log("API key saved to localStorage");
+    } else if (apiKey === "" && localStorage.getItem('apiKey')) {
+      // Only remove from localStorage if explicitly set to empty (not on initial load)
+      console.log("API key cleared from localStorage");
+      localStorage.removeItem('apiKey');
+    }
+  }, [apiKey]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      localStorage.setItem('currentMessages', JSON.stringify(messages));
+      console.log("Messages saved to localStorage:", messages.length, "messages");
+    }
+  }, [messages]);
+
+  // Save chat sessions to localStorage whenever they change
+  useEffect(() => {
+    if (chatSessions && chatSessions.length > 0) {
+      localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+      console.log("Chat sessions saved to localStorage:", chatSessions.length, "sessions");
+    }
+  }, [chatSessions]);
+
+  // Save current session ID to localStorage whenever it changes
+  useEffect(() => {
+    if (currentSessionId) {
+      localStorage.setItem('currentSessionId', currentSessionId.toString());
+    }
+  }, [currentSessionId]);
+
+  // Set chat bar position based on whether there are messages
+  useEffect(() => {
+    setChatBarPosition(messages && messages.length > 0 ? "bottom" : "center");
+  }, [messages]);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (selectorRef.current && !selectorRef.current.contains(e.target)) {
@@ -369,23 +469,27 @@ function ChatInterface() {
       setAuthLoading(false);
       
       if (currentUser) {
-        // Load user's chat sessions from Firebase
+        // Load user's chat sessions from Firebase (merge with localStorage data)
         const loadUserSessions = async () => {
           try {
             const sessions = await getUserSessions(currentUser.uid);
             if (sessions && sessions.length > 0) {
-              setChatSessions(sessions);
-              
-              // Set the current session to the most recent one
-              const latestSession = sessions[0];
-              setCurrentSessionId(latestSession.id);
-              
-              // Load messages for this session
-              const sessionMessages = await getSessionMessages(latestSession.id);
-              setMessages(sessionMessages || []);
-              
-              // Set chat bar position based on messages
-              setChatBarPosition(sessionMessages && sessionMessages.length > 0 ? "bottom" : "center");
+              // Only update if Firebase has more recent data
+              const localSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
+              if (localSessions.length === 0 || sessions.length > localSessions.length) {
+                setChatSessions(sessions);
+                
+                // Set the current session to the most recent one
+                const latestSession = sessions[0];
+                setCurrentSessionId(latestSession.id);
+                
+                // Load messages for this session
+                const sessionMessages = await getSessionMessages(latestSession.id);
+                setMessages(sessionMessages || []);
+                
+                // Set chat bar position based on messages
+                setChatBarPosition(sessionMessages && sessionMessages.length > 0 ? "bottom" : "center");
+              }
             }
             
             // Load user's API keys
@@ -443,8 +547,11 @@ function ChatInterface() {
   }, [showLanguageOptions]);
 
   useEffect(() => {
-    if (selectedModel !== "Ollama-Local") {
-      setApiKey("");
+    // Only clear API key when switching TO Ollama-Local (since it doesn't need an API key)
+    // Don't clear it when switching away from Ollama-Local to other models
+    if (selectedModel === "Ollama-Local") {
+      // Ollama doesn't need an API key, but don't clear the stored one
+      // in case user switches back to other models
     }
   }, [selectedModel]);
 
