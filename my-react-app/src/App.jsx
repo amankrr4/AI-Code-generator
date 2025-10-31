@@ -321,6 +321,14 @@ function ChatInterface() {
     return () => window.removeEventListener("mousemove", handleHover);
   }, [sidebarOpen, showLogoutConfirmation]);
 
+  // Reset openMenuId and profileMenuOpen when sidebar closes
+  useEffect(() => {
+    if (!sidebarOpen) {
+      setOpenMenuId(null);
+      setProfileMenuOpen(false);
+    }
+  }, [sidebarOpen]);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (selectorRef.current && !selectorRef.current.contains(e.target)) {
