@@ -842,7 +842,7 @@ function ChatInterface() {
                   className="menu-toggle-btn"
                   onClick={(e) => toggleMenu(session.id, e)}
                 >
-                  •••
+                                                                                                                        •••
                 </button>
                 {openMenuId === session.id && (
                   <div className="session-menu">
@@ -967,7 +967,7 @@ function ChatInterface() {
         </div>
 
         <div className="chat-scroll-area" ref={chatScrollAreaRef} style={{ overflowY: 'auto', maxHeight: 'calc(100% - 80px)' }}>
-          {/* Let's Code typing animation - only show when no messages and chat bar is centered */}
+          {/* Welcome message typing animation - only show when no messages and chat bar is centered */}
           {messages.length === 0 && chatBarPosition === "center" && (
             <div className="typing-container">
               <div className="typing-text">
@@ -981,9 +981,9 @@ function ChatInterface() {
                     }
                     // Use only the first word (first name)
                     const firstName = name.split(" ")[0];
-                    return `Let's code ${firstName}`;
+                    return `hello there  ${firstName}`;
                   }
-                  return "Let's code";
+                  return "hello there?";
                 })()}
               </div>
             </div>
