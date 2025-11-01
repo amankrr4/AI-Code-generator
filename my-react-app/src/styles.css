@@ -1429,7 +1429,7 @@ body {
 
 /* User message copy button - positioned outside to the left */
 .copy.user-copy {
-  top: 28px;
+  top: 18px;
   left: -18px;
   right: auto;
   transition: all 0.2s ease, opacity 0.3s ease 0.5s; /* Added delay to opacity transition */
