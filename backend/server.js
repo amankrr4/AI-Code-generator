@@ -210,6 +210,14 @@ Rules:
                 });
             }
 
+            // Map frontend model names to actual Groq model names
+            let groqModel = "openai/gpt-oss-20b"; // default
+            if (model.toLowerCase().includes("kimi-k2")) {
+                groqModel = "moonshotai/kimi-k2-instruct-0905";
+            } else if (model.toLowerCase().includes("gpt-oss")) {
+                groqModel = "openai/gpt-oss-20b";
+            }
+
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -217,15 +225,16 @@ Rules:
                     "Authorization": `Bearer ${effectiveApiKey}`
                 },
                 body: JSON.stringify({
-                    model: "openai/gpt-oss-20b",
+                    model: groqModel,
                     messages: [
                         { role: "system", content: "You are an expert programmer." },
                         { role: "user", content: wrappedPrompt }
                     ],
-                    temperature: 0.2,
-                    max_tokens: 8192,
+                    temperature: 0.6,
+                    max_completion_tokens: 4096,
                     top_p: 1,
-                    reasoning_effort: "medium"
+                    stream: false, // Set to false for now, can enable streaming later
+                    stop: null
                 })
             });
 

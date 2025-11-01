@@ -190,16 +190,7 @@ const mapLanguageForSyntaxHighlighter = (language) => {
 function ChatInterface() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    // Load messages from localStorage on initial load
-    try {
-      const savedMessages = localStorage.getItem('currentMessages');
-      return savedMessages ? JSON.parse(savedMessages) : [];
-    } catch (error) {
-      console.error("Error loading messages from localStorage:", error);
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState([]);
   
   const [chatSessions, setChatSessions] = useState(() => {
     // Load chat sessions from localStorage on initial load
@@ -211,11 +202,7 @@ function ChatInterface() {
       return [];
     }
   });
-  const [currentSessionId, setCurrentSessionId] = useState(() => {
-    // Load current session ID from localStorage
-    const savedSessionId = localStorage.getItem('currentSessionId');
-    return savedSessionId ? parseInt(savedSessionId) : Date.now();
-  });
+  const [currentSessionId, setCurrentSessionId] = useState(Date.now());
   const [inputValue, setInputValue] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
@@ -314,7 +301,7 @@ function ChatInterface() {
   const profileMenuRef = useRef(null);
 
   const languages = ["Python", "JavaScript", "Java", "C++", "Ruby", "Go", "Rust", "TypeScript", "Swift", "Kotlin"];
-  const models = ["gpt-4.1", "Claude", "Gemini-Flash", "Gemini-Pro", "Groq-GPT-OSS-20B", "Ollama-Local"];
+  const models = ["gpt-4.1", "Claude", "Gemini-Flash", "Gemini-Pro", "Groq-GPT-OSS-20B", "Groq-Kimi-K2", "Ollama-Local"];
   const ollamaModels = [
     "phi3:3.8b", "mistral:7b", "llama3:8b", "gemma:2b", "gemma3:4b",
     "gemma:7b", "codegemma:2b", "codegemma:7b", "starcoder2:3b", "deepseek-coder:6.7b",
@@ -331,6 +318,7 @@ function ChatInterface() {
       case "Gemini-Pro":
         return "https://ai.google.dev/";
       case "Groq-GPT-OSS-20B":
+      case "Groq-Kimi-K2":
         return "https://console.groq.com/keys";
       case "Ollama-Local":
         return "https://ollama.com/download";
@@ -469,7 +457,7 @@ function ChatInterface() {
       setAuthLoading(false);
       
       if (currentUser) {
-        // Load user's chat sessions from Firebase (merge with localStorage data)
+        // Load user's chat sessions from Firebase (merge with localStorage data) but don't auto-open
         const loadUserSessions = async () => {
           try {
             const sessions = await getUserSessions(currentUser.uid);
@@ -478,17 +466,8 @@ function ChatInterface() {
               const localSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
               if (localSessions.length === 0 || sessions.length > localSessions.length) {
                 setChatSessions(sessions);
-                
-                // Set the current session to the most recent one
-                const latestSession = sessions[0];
-                setCurrentSessionId(latestSession.id);
-                
-                // Load messages for this session
-                const sessionMessages = await getSessionMessages(latestSession.id);
-                setMessages(sessionMessages || []);
-                
-                // Set chat bar position based on messages
-                setChatBarPosition(sessionMessages && sessionMessages.length > 0 ? "bottom" : "center");
+                // DON'T automatically open the latest session - start fresh
+                console.log("Chat sessions loaded from Firebase:", sessions.length, "sessions available");
               }
             }
             
