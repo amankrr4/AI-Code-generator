@@ -74,26 +74,27 @@ app.post("/api/chat", async (req, res) => {
     console.log("➡️ Chat request received. Model:", model);
 
     try {
-        const wrappedPrompt = `
-You are an expert ${language} programmer and helpful AI assistant.
-Task: ${prompt}
+        // Create a ChatGPT-like conversational prompt
+        const systemPrompt = `You are a helpful AI coding assistant. Be EXTREMELY concise.
 
-Response format:
-1. Start with a brief, friendly introduction (1 sentence) about what you're creating based on the user's request.
-2. Then provide ONLY the complete, runnable ${language} code.
-3. The code must include function definition(s) AND a main/test block.
-4. Remove (\`\`\`${language}\`\`\`) if present.
-5. Do NOT add extra explanations after the code.
+CRITICAL RULES:
+- For code requests: Write ONLY 1-2 sentences of introduction, then immediately provide the code
+- NO tables, NO bullet points, NO lengthy explanations
+- Let the code comments explain the details
+- For questions: Answer in 2-3 sentences maximum, then provide a code example if relevant
 
-Example format:
-"Here's a ${language} program to [task description]:
+Example response format:
+"Here's a ${language} program that does what you asked:
 
-[your code here]"
-`.trim();
+[code here with comments]"
 
+That's it. No more text. Be brief.`;
+
+        const userPrompt = prompt;
         let responseText = "";
+        let detectedLanguage = language || "plaintext";
 
-        // ================== OPENAI ==================
+    // ================== OPENAI ==================
         if (model.toLowerCase().startsWith("gpt-")) {
             const effectiveApiKey = apiKey || process.env.OPENAI_API_KEY;
             if (!effectiveApiKey) {
@@ -117,8 +118,8 @@ Example format:
                 body: JSON.stringify({
                     model: openaiModel,
                     messages: [
-                        { role: "system", content: "You are a helpful AI assistant." },
-                        { role: "user", content: wrappedPrompt },
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt },
                     ],
                 }),
             });
@@ -152,7 +153,8 @@ Example format:
                 body: JSON.stringify({
                     model: "claude-3-5-sonnet-20240620",
                     max_tokens: 4096,
-                    messages: [{ role: "user", content: wrappedPrompt }],
+                    system: systemPrompt,
+                    messages: [{ role: "user", content: userPrompt }],
                 }),
             });
 
@@ -193,7 +195,8 @@ Example format:
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: wrappedPrompt }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] },
+                        contents: [{ parts: [{ text: userPrompt }] }],
                     }),
                 }
             );
@@ -234,13 +237,13 @@ Example format:
                 body: JSON.stringify({
                     model: groqModel,
                     messages: [
-                        { role: "system", content: "You are an expert programmer." },
-                        { role: "user", content: wrappedPrompt }
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
                     ],
-                    temperature: 0.6,
+                    temperature: 0.7,
                     max_completion_tokens: 4096,
                     top_p: 1,
-                    stream: false, // Set to false for now, can enable streaming later
+                    stream: false,
                     stop: null
                 })
             });
@@ -261,7 +264,7 @@ Example format:
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model,
-                    prompt: wrappedPrompt,
+                    prompt: `${systemPrompt}\n\nUser: ${userPrompt}\n\nAssistant:`,
                     stream: false,
                 }),
             });
@@ -282,34 +285,43 @@ Example format:
             }
         }
 
-        // Clean up response text and extract intro and code separately
-        let detectedLanguage = language; // Default to requested language
+        // Parse response to extract intro and code separately
         let intro = "";
-        let codeOnly = responseText;
+        let cleanResponse = responseText;
         
-        // Try to extract intro (text before the code)
-        // Pattern: "Some text here:\n\ncode" or "Some text here\n\ncode"
-        const introMatch = responseText.match(/^(.+?):\s*\n\n(.+)$/s);
-        if (introMatch) {
-            intro = introMatch[1].trim();
-            codeOnly = introMatch[2].trim();
+        // Check if response contains code blocks
+        const hasCodeBlock = responseText.includes('```');
+        
+        if (hasCodeBlock) {
+            // Extract intro (everything before the first code block)
+            const beforeCodeMatch = responseText.match(/^(.*?)```/s);
+            if (beforeCodeMatch && beforeCodeMatch[1].trim()) {
+                intro = beforeCodeMatch[1].trim();
+                // Remove trailing colons or newlines from intro
+                intro = intro.replace(/[:]+\s*$/, '').trim();
+            }
+            
+            // Extract language from markdown fence
+            const langMatch = responseText.match(/```(\w+)/);
+            if (langMatch && langMatch[1]) {
+                detectedLanguage = langMatch[1];
+            }
+            
+            // Extract clean code (remove markdown fences)
+            cleanResponse = responseText
+                .replace(/^.*?```[\w]*\n?/s, '') // Remove everything up to and including opening fence
+                .replace(/\n?```[\s\S]*$/g, '') // Remove closing fence and anything after
+                .trim();
+        } else {
+            // No code block - treat entire response as plain text
+            cleanResponse = responseText.trim();
+            detectedLanguage = "plaintext";
         }
-        
-        // Check if the response has markdown code blocks with language specifier
-        const markdownLangMatch = codeOnly.match(/^```(\w+)/);
-        if (markdownLangMatch && markdownLangMatch[1]) {
-            detectedLanguage = markdownLangMatch[1]; // Use the language from markdown fence
-        }
-        
-        const cleanResponse = codeOnly
-            .replace(/^```[\w]*\n?/g, '')
-            .replace(/\n?```$/g, '')
-            .trim();
 
         res.json({ 
             response: cleanResponse, 
             language: detectedLanguage,
-            intro: intro // Send intro separately
+            intro: intro || null
         });
     } catch (error) {
         console.error("Chat API Error:", error);
