@@ -75,13 +75,20 @@ app.post("/api/chat", async (req, res) => {
 
     try {
         const wrappedPrompt = `
-You are an expert ${language} programmer.
+You are an expert ${language} programmer and helpful AI assistant.
 Task: ${prompt}
-Rules:
-- Return ONLY a complete, runnable ${language} program.
-- Must include function definition(s) AND a main/test block.
-- No explanations, comments, or markdown fences.
-- Remove \`\`\`${language}\`\`\` if present.                 
+
+Response format:
+1. Start with a brief, friendly introduction (1 sentence) about what you're creating based on the user's request.
+2. Then provide ONLY the complete, runnable ${language} code.
+3. The code must include function definition(s) AND a main/test block.
+4. Remove (\`\`\`${language}\`\`\`) if present.
+5. Do NOT add extra explanations after the code.
+
+Example format:
+"Here's a ${language} program to [task description]:
+
+[your code here]"
 `.trim();
 
         let responseText = "";
@@ -275,21 +282,35 @@ Rules:
             }
         }
 
-        // Clean up response text and extract language from markdown fences if present
+        // Clean up response text and extract intro and code separately
         let detectedLanguage = language; // Default to requested language
+        let intro = "";
+        let codeOnly = responseText;
+        
+        // Try to extract intro (text before the code)
+        // Pattern: "Some text here:\n\ncode" or "Some text here\n\ncode"
+        const introMatch = responseText.match(/^(.+?):\s*\n\n(.+)$/s);
+        if (introMatch) {
+            intro = introMatch[1].trim();
+            codeOnly = introMatch[2].trim();
+        }
         
         // Check if the response has markdown code blocks with language specifier
-        const markdownLangMatch = responseText.match(/^```(\w+)/);
+        const markdownLangMatch = codeOnly.match(/^```(\w+)/);
         if (markdownLangMatch && markdownLangMatch[1]) {
             detectedLanguage = markdownLangMatch[1]; // Use the language from markdown fence
         }
         
-        const cleanResponse = responseText
+        const cleanResponse = codeOnly
             .replace(/^```[\w]*\n?/g, '')
             .replace(/\n?```$/g, '')
             .trim();
 
-        res.json({ response: cleanResponse, language: detectedLanguage });
+        res.json({ 
+            response: cleanResponse, 
+            language: detectedLanguage,
+            intro: intro // Send intro separately
+        });
     } catch (error) {
         console.error("Chat API Error:", error);
 

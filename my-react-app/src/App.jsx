@@ -106,7 +106,7 @@ const okaidiaStyle = {
 };
 
 // Simple typewriter component that displays full content with CSS animation
-function TypewriterText({ content, isCode = false, language = 'javascript' }) {
+function TypewriterText({ content, isCode = false, language = 'javascript', intro = null }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -131,7 +131,8 @@ function TypewriterText({ content, isCode = false, language = 'javascript' }) {
 
   if (isCode && language && language !== 'plaintext') {
     return (
-      <div style={containerStyle}>
+      <div className="vs-code-container">
+        <div style={containerStyle}>
         {content.split('\n').map((line, index) => (
           <div 
             key={index}
@@ -147,12 +148,13 @@ function TypewriterText({ content, isCode = false, language = 'javascript' }) {
               minWidth: '20px',
               textAlign: 'right'
             }}>
-              {index + 1}
-            </span>
-            <span>{line}</span>
-          </div>
-        ))}
-      </div>
+                {index + 1}
+              </span>
+              <span>{line}</span>
+            </div>
+          ))}
+        </div>
+         </div>
     );
   }
 
@@ -608,7 +610,7 @@ function ChatInterface() {
   }, [selectedModel]);
 
   // ✅ FIXED addMessage with Firebase integration
-  const addMessage = async (content, type, language = null) => {
+  const addMessage = async (content, type, language = null, intro = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
     // Use a more precise timestamp for message ID to ensure ordering
     const messageId = Date.now() + Math.random();
@@ -618,6 +620,7 @@ function ChatInterface() {
       type,
       content: safeContent,
       language,
+      intro: intro || null, // Add intro field
       timestamp: new Date().toISOString()
     };
     
@@ -648,7 +651,7 @@ function ChatInterface() {
       try {
         // Save message to Firebase (role is either 'user' or 'assistant')
         const role = type === 'user' ? 'user' : 'assistant';
-        await saveFirebaseMessage(currentSessionId, safeContent, role, language);
+        await saveFirebaseMessage(currentSessionId, safeContent, role, language, intro);
         
         // Update session title in Firebase if this is the first user message
         if (type === 'user' && messages.length === 0) {
@@ -738,7 +741,8 @@ function ChatInterface() {
           // And ensure it's not undefined or null
           const responseLanguage = data.language || selectedLanguage;
           console.log("Response language:", responseLanguage); // Debug the language
-          addMessage(data.response, "assistant", responseLanguage);
+          console.log("Response intro:", data.intro); // Debug the intro
+          addMessage(data.response, "assistant", responseLanguage, data.intro);
         } else {
           addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext");
         }
@@ -1195,54 +1199,77 @@ function ChatInterface() {
               const isNewMessage = newMessageIds.has(message.id);
               const isNewAssistantMessage = isNewMessage && message.type === 'assistant';
               
+              // For user messages - no wrapper needed, render directly
+              if (message.type === "user") {
+                return (
+                  <div key={message.id} className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
+                    <button
+                      className={`copy user-copy ${copiedMessageId === message.content ? 'focus' : ''}`}
+                      onClick={() => handleCopy(message.content)}
+                      data-content={message.content}
+                    >
+                      <span className="tooltip" data-text-initial="Copy" data-text-end="Copied!"></span>
+                      <svg className="clipboard" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1h-3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                      </svg>
+                      <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                      </svg>
+                    </button>
+                    {message.content}
+                  </div>
+                );
+              }
+              
+              // For assistant messages - use wrapper for intro
               return (
-              <div key={message.id} className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
-                {/* Copy button for user messages */}
-                {message.type === "user" && (
-                  <button
-                    className={`copy user-copy ${copiedMessageId === message.content ? 'focus' : ''}`}
-                    onClick={() => handleCopy(message.content)}
-                    data-content={message.content}
-                  >
-                    <span className="tooltip" data-text-initial="Copy" data-text-end="Copied!"></span>
-                    <svg className="clipboard" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                      <path d="M9.5 1h-3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                    </svg>
-                  </button>
+              <div key={message.id}>
+                {/* Intro text - OUTSIDE the message box */}
+                {message.intro && (
+                  <p style={{ 
+                    marginBottom: '8px', 
+                    marginLeft: '12px',
+                    color: '#d4d4d4', 
+                    fontSize: '14px', 
+                    lineHeight: '1.6',
+                    fontWeight: '400'
+                  }}>
+                    {message.intro}
+                  </p>
                 )}
+                
+                {/* Message box - contains ONLY the code/content */}
+                <div className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
                 {/* Copy button for assistant messages */}
-                {message.type === "assistant" && (
-                  <button
-                    className={`copy ${copiedMessageId === message.content ? 'focus' : ''}`}
-                    onClick={() => handleCopy(message.content)}
-                    data-content={message.content}
-                  >
-                    <span className="tooltip" data-text-initial="Copy" data-text-end="Copied!"></span>
-                    <svg className="clipboard" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                      <path d="M9.5 1h-3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1 0 .708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                    </svg>
-                  </button>
-                )}
+                <button
+                  className={`copy ${copiedMessageId === message.content ? 'focus' : ''}`}
+                  onClick={() => handleCopy(message.content)}
+                  data-content={message.content}
+                >
+                  <span className="tooltip" data-text-initial="Copy" data-text-end="Copied!"></span>
+                  <svg className="clipboard" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                    <path d="M9.5 1h-3a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                  </svg>
+                  <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1 0 .708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                  </svg>
+                </button>
                 {isNewAssistantMessage ? (
                   // Show typewriter effect for new assistant messages only
                   <TypewriterText 
                     content={message.content} 
                     isCode={message.language && message.language !== "plaintext"} 
                     language={message.language}
+                    intro={message.intro}
                   />
                 ) : (
                   // Show normal rendering for existing messages
-                  message.type === "assistant" && message.language && message.language !== "plaintext" ? (
-                    <div className="vs-code-container">
-                      <SyntaxHighlighter
+                  <>
+                    {message.language && message.language !== "plaintext" ? (
+                      <div className="vs-code-container">
+                        <SyntaxHighlighter
                         language={mapLanguageForSyntaxHighlighter(message.language)}
                         style={okaidiaStyle}
                         wrapLongLines={false}
@@ -1280,8 +1307,10 @@ function ChatInterface() {
                     </div>
                   ) : (
                     message.content
-                  )
+                  )}
+                  </>
                 )}
+              </div>
               </div>
             );
             })}

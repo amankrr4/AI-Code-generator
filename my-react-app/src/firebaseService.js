@@ -281,7 +281,7 @@ export const updateSessionTitle = async (sessionId, title) => {
 // ===== Messages =====
 
 // Save a message
-export const saveMessage = async (sessionId, content, role, language = null) => {
+export const saveMessage = async (sessionId, content, role, language = null, intro = null) => {
   try {
     // Use client-side timestamp for reliable ordering
     const now = new Date();
@@ -296,6 +296,10 @@ export const saveMessage = async (sessionId, content, role, language = null) => 
     
     if (language) {
       messageData.language = language;
+    }
+    
+    if (intro) {
+      messageData.intro = intro;
     }
     
     const docRef = await addDoc(collection(db, "messages"), messageData);
