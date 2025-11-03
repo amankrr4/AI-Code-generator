@@ -7,7 +7,8 @@ import './styles.css';
 import './testGoogleSignIn.js';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  // Temporarily disabled StrictMode to prevent double-mounting issues with Firebase auth
+  // <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  // </React.StrictMode>,
 );

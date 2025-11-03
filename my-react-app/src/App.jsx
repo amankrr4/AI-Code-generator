@@ -11,7 +11,8 @@ import {
   saveMessage as saveFirebaseMessage,
   getSessionMessages,
   saveApiKey as saveFirebaseApiKey,
-  getApiKey as getFirebaseApiKey
+  getApiKey as getFirebaseApiKey,
+  updateSessionTitle as updateFirebaseSessionTitle
 } from './firebaseService';
 
 // Import the debug function from firebaseAuth
@@ -192,16 +193,8 @@ function ChatInterface() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   
-  const [chatSessions, setChatSessions] = useState(() => {
-    // Load chat sessions from localStorage on initial load
-    try {
-      const savedSessions = localStorage.getItem('chatSessions');
-      return savedSessions ? JSON.parse(savedSessions) : [];
-    } catch (error) {
-      console.error("Error loading chat sessions from localStorage:", error);
-      return [];
-    }
-  });
+  // Don't initialize from localStorage - let Firebase handle session state
+  const [chatSessions, setChatSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now());
   const [inputValue, setInputValue] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("Python");
@@ -397,20 +390,11 @@ function ChatInterface() {
     }
   }, [messages]);
 
-  // Save chat sessions to localStorage whenever they change
-  useEffect(() => {
-    if (chatSessions && chatSessions.length > 0) {
-      localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
-      console.log("Chat sessions saved to localStorage:", chatSessions.length, "sessions");
-    }
-  }, [chatSessions]);
+  // Don't save chat sessions to localStorage - Firebase handles persistence
+  // Removed useEffect that was saving chatSessions to localStorage
 
-  // Save current session ID to localStorage whenever it changes
-  useEffect(() => {
-    if (currentSessionId) {
-      localStorage.setItem('currentSessionId', currentSessionId.toString());
-    }
-  }, [currentSessionId]);
+  // Don't save session ID to localStorage - Firebase handles this
+  // Removed useEffect that was saving currentSessionId to localStorage
 
   // Set chat bar position based on whether there are messages
   useEffect(() => {
@@ -446,40 +430,129 @@ function ChatInterface() {
     }
   };
 
+  // Monitor chatSessions state changes
+  useEffect(() => {
+    console.log("🔍 chatSessions state changed:", chatSessions.length, "sessions");
+    console.log("Sessions array:", chatSessions);
+  }, [chatSessions]);
+
+  // Monitor messages state changes - REMOVED AUTO-SORTING to prevent infinite loop
+  useEffect(() => {
+    console.log("💬 Messages state changed:", messages.length, "messages");
+    if (messages.length > 0) {
+      // Log each message with its timestamp for debugging
+      messages.forEach((msg, idx) => {
+        console.log(`  ${idx + 1}. [${msg.type}] ${msg.content.substring(0, 30)}... (${msg.timestamp})`);
+      });
+    }
+  }, [messages]);
+
   // Firebase authentication listener
   useEffect(() => {
     // Debug authentication status
     debugAuth();
     
+    let isInitialLoad = true;
+    
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      console.log("Auth state changed, user:", currentUser);
+      console.log("🔐 Auth state changed, user:", currentUser?.email || "null");
+      console.log("Is initial load:", isInitialLoad);
+      
       setUser(currentUser);
       setAuthLoading(false);
       
       if (currentUser) {
-        // Load user's chat sessions from Firebase (merge with localStorage data) but don't auto-open
+        // Load user's chat sessions from Firebase
         const loadUserSessions = async () => {
           try {
+            console.log("📥 Loading sessions for user:", currentUser.uid);
             const sessions = await getUserSessions(currentUser.uid);
+            console.log("📦 Raw sessions from Firebase:", sessions);
+            
             if (sessions && sessions.length > 0) {
-              // Only update if Firebase has more recent data
-              const localSessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
-              if (localSessions.length === 0 || sessions.length > localSessions.length) {
-                setChatSessions(sessions);
-                // DON'T automatically open the latest session - start fresh
-                console.log("Chat sessions loaded from Firebase:", sessions.length, "sessions available");
+              console.log("*** SETTING CHAT SESSIONS ***", sessions);
+              setChatSessions(sessions);
+              console.log("✅ Chat sessions loaded from Firebase:", sessions.length, "sessions available");
+              console.log("Sessions:", JSON.stringify(sessions, null, 2));
+              
+              // Verify state was set (this will show in next render)
+              setTimeout(() => {
+                console.log("⏱️ Verifying chatSessions state after 1 second...");
+              }, 1000);
+              
+              // Load messages for the first (most recent) session
+              const firstSession = sessions[0];
+              try {
+                const messages = await getSessionMessages(firstSession.id);
+                console.log("💬 Loaded messages for current session:", messages.length);
+                
+                // Ensure messages are sorted before setting state
+                const sortedMessages = [...messages].sort((a, b) => {
+                  return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                });
+                
+                setMessages(sortedMessages);
+                setCurrentSessionId(firstSession.id);
+                setChatBarPosition(sortedMessages && sortedMessages.length > 0 ? "bottom" : "center");
+              } catch (error) {
+                console.error("❌ Error loading session messages:", error);
+                // Start with empty messages if loading fails
+                setMessages([]);
+                setCurrentSessionId(firstSession.id);
+              }
+            } else {
+              // No sessions in Firebase, create a new one
+              console.log("🆕 No sessions found in Firebase, creating new session");
+              try {
+                const newChatData = await createFirebaseChatSession(currentUser.uid, "New Chat");
+                console.log("✨ New session created:", newChatData);
+                setChatSessions([newChatData]);
+                setCurrentSessionId(newChatData.id);
+                setMessages([]);
+                setChatBarPosition("center");
+              } catch (error) {
+                console.error("❌ Error creating new session:", error);
+                setChatSessions([]);
+                setMessages([]);
               }
             }
             
             // Load user's API keys
             loadApiKeys(currentUser.uid);
           } catch (error) {
-            console.error("Error loading user data:", error);
+            console.error("❌ Error loading user data:", error);
+            // On error, start with empty sessions
+            setChatSessions([]);
+            setMessages([]);
           }
         };
         
         loadUserSessions();
+      } else if (!isInitialLoad) {
+        // Only clear on explicit logout, not on initial mount
+        // User logged out - clear all chat state and user-specific data
+        console.log("👋 User logged out, clearing chat state");
+        setMessages([]);
+        setChatSessions([]);
+        setCurrentSessionId(Date.now()); // Reset to new session ID
+        setApiKey(""); // Clear API key from state
+        
+        // Clear user-specific data from localStorage
+        localStorage.removeItem('apiKey');
+        localStorage.removeItem('chatSessions');
+        localStorage.removeItem('currentMessages');
+        localStorage.removeItem('currentSessionId');
+        localStorage.removeItem('selectedModel');
+        localStorage.removeItem('selectedOllamaModel');
+        
+        // Reset other user-specific state
+        setSelectedModel("");
+        setSelectedOllamaModel("");
+        setInputValue("");
+        setNewMessageIds(new Set());
       }
+      
+      isInitialLoad = false;
     });
     
     return () => unsubscribe();
@@ -537,6 +610,7 @@ function ChatInterface() {
   // ✅ FIXED addMessage with Firebase integration
   const addMessage = async (content, type, language = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
+    // Use a more precise timestamp for message ID to ensure ordering
     const messageId = Date.now() + Math.random();
     
     const newMessage = {
@@ -547,7 +621,7 @@ function ChatInterface() {
       timestamp: new Date().toISOString()
     };
     
-    // Update UI immediately
+    // Update UI immediately - append to the end
     setMessages((prev) => [...prev, newMessage]);
 
     // Track new message for animation
@@ -575,6 +649,11 @@ function ChatInterface() {
         // Save message to Firebase (role is either 'user' or 'assistant')
         const role = type === 'user' ? 'user' : 'assistant';
         await saveFirebaseMessage(currentSessionId, safeContent, role, language);
+        
+        // Update session title in Firebase if this is the first user message
+        if (type === 'user' && messages.length === 0) {
+          await updateFirebaseSessionTitle(currentSessionId, safeContent);
+        }
       } catch (error) {
         console.error("Error saving message to Firebase:", error);
       }
@@ -586,7 +665,8 @@ function ChatInterface() {
       if (existingSessionIndex >= 0) {
         const updatedSession = {
           ...prev[existingSessionIndex],
-          messages: [...prev[existingSessionIndex].messages, newMessage],
+          // Ensure messages is always an array, even if undefined
+          messages: [...(prev[existingSessionIndex].messages || []), newMessage],
           // Don't update loading state here as it's managed separately
         };
         if (type === "user" && !updatedSession.title) {
@@ -915,7 +995,7 @@ function ChatInterface() {
             <div 
               key={session.id} 
               className={`history-session ${session.id === currentSessionId ? 'active' : ''}`}
-              onClick={() => {
+              onClick={async () => {
                 // Cancel any in-flight requests from the current session before switching
                 if (abortControllerRef.current) {
                   abortControllerRef.current.abort();
@@ -923,11 +1003,36 @@ function ChatInterface() {
                 }
                 
                 setCurrentSessionId(session.id);
-                setMessages(session.messages);
+                
+                // If user is logged in, load messages from Firebase
+                if (user) {
+                  try {
+                    console.log("Loading messages for session:", session.id);
+                    const messages = await getSessionMessages(session.id);
+                    console.log("Loaded messages from Firebase:", messages.length);
+                    
+                    // Ensure messages are sorted by timestamp before setting state
+                    const sortedMessages = [...messages].sort((a, b) => {
+                      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                    });
+                    
+                    console.log("Messages sorted, setting state");
+                    setMessages(sortedMessages);
+                    setChatBarPosition(sortedMessages && sortedMessages.length > 0 ? "bottom" : "center");
+                  } catch (error) {
+                    console.error("Error loading session messages:", error);
+                    // Fall back to local messages if Firebase fails
+                    setMessages(session.messages || []);
+                    setChatBarPosition(session.messages && session.messages.length > 0 ? "bottom" : "center");
+                  }
+                } else {
+                  // Not logged in, use local messages
+                  setMessages(session.messages || []);
+                  setChatBarPosition(session.messages && session.messages.length > 0 ? "bottom" : "center");
+                }
+                
                 // Always reset loading state when switching chats
                 setLoading(false);
-                // Set chat bar position based on whether the session has messages
-                setChatBarPosition(session.messages && session.messages.length > 0 ? "bottom" : "center");
               }}
             >
               <div className="session-title">{session.title}</div>

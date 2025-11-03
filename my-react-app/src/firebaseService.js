@@ -183,9 +183,14 @@ export const createChatSession = async (userId, title = "New Chat") => {
 
 // Get all chat sessions for a user
 export const getUserSessions = async (userId) => {
-  if (!userId) return [];
+  if (!userId) {
+    console.log("getUserSessions: No userId provided");
+    return [];
+  }
   
   try {
+    console.log("getUserSessions: Fetching sessions for userId:", userId);
+    
     const sessionsQuery = query(
       collection(db, "sessions"),
       where("userId", "==", userId),
@@ -193,12 +198,45 @@ export const getUserSessions = async (userId) => {
     );
     
     const querySnapshot = await getDocs(sessionsQuery);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    console.log("getUserSessions: Found", querySnapshot.docs.length, "sessions");
+    
+    const sessions = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log("Session data:", doc.id, data);
+      return {
+        id: doc.id,
+        ...data
+      };
+    });
+    
+    return sessions;
   } catch (error) {
     console.error("Error getting chat sessions: ", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
+    
+    // If it's an index error, try without orderBy
+    if (error.code === 'failed-precondition' || error.message.includes('index')) {
+      console.log("Index error detected, trying without orderBy...");
+      try {
+        const simpleQuery = query(
+          collection(db, "sessions"),
+          where("userId", "==", userId)
+        );
+        
+        const querySnapshot = await getDocs(simpleQuery);
+        console.log("getUserSessions (no order): Found", querySnapshot.docs.length, "sessions");
+        
+        return querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      } catch (retryError) {
+        console.error("Retry error:", retryError);
+        return [];
+      }
+    }
+    
     return [];
   }
 };
@@ -245,11 +283,15 @@ export const updateSessionTitle = async (sessionId, title) => {
 // Save a message
 export const saveMessage = async (sessionId, content, role, language = null) => {
   try {
+    // Use client-side timestamp for reliable ordering
+    const now = new Date();
+    
     const messageData = {
       sessionId,
       content,
       role, // 'user' or 'assistant'
-      timestamp: serverTimestamp()
+      timestamp: now, // Use JavaScript Date object
+      timestampMs: now.getTime() // Also store as milliseconds for easier sorting
     };
     
     if (language) {
@@ -266,7 +308,7 @@ export const saveMessage = async (sessionId, content, role, language = null) => 
     return {
       id: docRef.id,
       ...messageData,
-      timestamp: new Date() // For immediate display
+      timestamp: now.toISOString() // For immediate display
     };
   } catch (error) {
     console.error("Error saving message: ", error);
@@ -276,20 +318,86 @@ export const saveMessage = async (sessionId, content, role, language = null) => 
 
 // Get all messages for a session
 export const getSessionMessages = async (sessionId) => {
+  if (!sessionId) {
+    console.log("getSessionMessages: No sessionId provided");
+    return [];
+  }
+  
   try {
+    console.log("getSessionMessages: Fetching messages for sessionId:", sessionId);
+    
     const messagesQuery = query(
       collection(db, "messages"),
       where("sessionId", "==", sessionId),
-      orderBy("timestamp", "asc")
+      orderBy("timestampMs", "asc") // Order by milliseconds timestamp
     );
     
     const querySnapshot = await getDocs(messagesQuery);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    console.log("getSessionMessages: Found", querySnapshot.docs.length, "messages");
+    
+    const messages = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        type: data.role === 'user' ? 'user' : 'assistant', // Convert role to type
+        content: data.content,
+        language: data.language || null,
+        timestamp: data.timestamp?.toDate?.()?.toISOString() || new Date(data.timestampMs).toISOString(),
+        timestampMs: data.timestampMs || 0,
+        ...data
+      };
+    });
+    
+    // Sort messages by timestampMs to ensure correct order
+    messages.sort((a, b) => {
+      return (a.timestampMs || 0) - (b.timestampMs || 0);
+    });
+    
+    console.log("getSessionMessages: Returning", messages.length, "formatted messages");
+    return messages;
   } catch (error) {
     console.error("Error getting messages: ", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
+    
+    // If it's an index error, try without orderBy
+    if (error.code === 'failed-precondition' || error.message.includes('index')) {
+      console.log("Index error detected, trying without orderBy...");
+      try {
+        const simpleQuery = query(
+          collection(db, "messages"),
+          where("sessionId", "==", sessionId)
+        );
+        
+        const querySnapshot = await getDocs(simpleQuery);
+        console.log("getSessionMessages (no order): Found", querySnapshot.docs.length, "messages");
+        
+        const messages = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            type: data.role === 'user' ? 'user' : 'assistant',
+            content: data.content,
+            language: data.language || null,
+            timestamp: data.timestamp?.toDate?.()?.toISOString() || new Date(data.timestampMs).toISOString(),
+            timestampMs: data.timestampMs || 0,
+            ...data
+          };
+        });
+        
+        // Sort messages by timestampMs client-side since we can't use orderBy
+        messages.sort((a, b) => {
+          return (a.timestampMs || 0) - (b.timestampMs || 0);
+        });
+        
+        console.log("Messages sorted by timestampMs client-side");
+        return messages;
+      } catch (retryError) {
+        console.error("Retry error:", retryError);
+        return [];
+      }
+    }
+    
     return [];
   }
 };

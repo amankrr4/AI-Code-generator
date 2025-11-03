@@ -1,0 +1,432 @@
+{
+  "info": {
+    "name": "AI Code Assistant API",
+    "description": "Complete API collection for testing AI Code Assistant backend with multiple models",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "1"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Root Endpoint",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": [""]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - GPT-4.1",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"reverse an array\",\n  \"language\": \"Python\",\n  \"model\": \"gpt-4.1\",\n  \"apiKey\": \"{{openai_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Claude",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"create a function to calculate fibonacci sequence\",\n  \"language\": \"Python\",\n  \"model\": \"Claude\",\n  \"apiKey\": \"{{claude_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Gemini Flash",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"write a bubble sort algorithm\",\n  \"language\": \"JavaScript\",\n  \"model\": \"Gemini-Flash\",\n  \"apiKey\": \"{{gemini_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Gemini Pro",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"create a binary search tree implementation\",\n  \"language\": \"Java\",\n  \"model\": \"Gemini-Pro\",\n  \"apiKey\": \"{{gemini_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Groq GPT-OSS-20B",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"write a function to check if a string is a palindrome\",\n  \"language\": \"Python\",\n  \"model\": \"Groq-GPT-OSS-20B\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Groq Kimi-K2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"create a task manager function\",\n  \"language\": \"Python\",\n  \"model\": \"Groq-Kimi-K2\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Ollama (Llama3)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"write a function to merge two sorted arrays\",\n  \"language\": \"Python\",\n  \"model\": \"llama3:8b\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Ollama (CodeGemma)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"create a REST API endpoint for user authentication\",\n  \"language\": \"JavaScript\",\n  \"model\": \"codegemma:7b\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "chat"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check Ollama Model",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"llama3:8b\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/check-ollama",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "check-ollama"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User State - Enter",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"enter\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/user-state",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user-state"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User State - Send",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"send\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/user-state",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "user-state"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat - Multiple Languages Test",
+      "item": [
+        {
+          "name": "Python Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"create a class for a basic calculator with add, subtract, multiply, and divide methods\",\n  \"language\": \"Python\",\n  \"model\": \"Groq-Kimi-K2\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "JavaScript Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"create an async function to fetch data from an API\",\n  \"language\": \"JavaScript\",\n  \"model\": \"Groq-Kimi-K2\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Java Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"implement a LinkedList data structure with insert and delete methods\",\n  \"language\": \"Java\",\n  \"model\": \"Groq-Kimi-K2\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "C++ Example",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"write a template class for a stack with push, pop, and peek operations\",\n  \"language\": \"C++\",\n  \"model\": \"Groq-Kimi-K2\",\n  \"apiKey\": \"{{groq_api_key}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "chat"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "openai_api_key",
+      "value": "your-openai-api-key-here",
+      "type": "string"
+    },
+    {
+      "key": "claude_api_key",
+      "value": "your-claude-api-key-here",
+      "type": "string"
+    },
+    {
+      "key": "gemini_api_key",
+      "value": "your-gemini-api-key-here",
+      "type": "string"
+    },
+    {
+      "key": "groq_api_key",
+      "value": "your-groq-api-key-here",
+      "type": "string"
+    }
+  ]
+}
