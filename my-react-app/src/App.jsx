@@ -656,6 +656,21 @@ function ChatInterface() {
         // Update session title in Firebase if this is the first user message
         if (type === 'user' && messages.length === 0) {
           await updateFirebaseSessionTitle(currentSessionId, safeContent);
+          
+          // IMMEDIATELY update local state with new title
+          setChatSessions(prev => {
+            const existingSessionIndex = prev.findIndex(s => s.id === currentSessionId);
+            if (existingSessionIndex >= 0) {
+              const updatedSession = {
+                ...prev[existingSessionIndex],
+                title: safeContent
+              };
+              const newSessions = [...prev];
+              newSessions[existingSessionIndex] = updatedSession;
+              return newSessions;
+            }
+            return prev;
+          });
         }
       } catch (error) {
         console.error("Error saving message to Firebase:", error);
