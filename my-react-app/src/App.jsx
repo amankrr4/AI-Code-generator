@@ -178,26 +178,32 @@ function TypewriterText({ content, isCode = false, language = 'javascript', intr
 // Word-by-word typewriter component for intro text (ChatGPT-like effect)
 function WordTypewriter({ text }) {
   const [displayedText, setDisplayedText] = useState('');
-  const words = text.split(' ');
+  const [isComplete, setIsComplete] = useState(false);
   
   useEffect(() => {
-    let currentWordIndex = 0;
+    if (!text) return;
+    
+    setDisplayedText(''); // Reset on text change
+    setIsComplete(false);
+    let currentIndex = 0;
+    
     const interval = setInterval(() => {
-      if (currentWordIndex < words.length) {
-        setDisplayedText(prev => {
-          const newText = prev + (prev ? ' ' : '') + words[currentWordIndex];
-          return newText;
-        });
-        currentWordIndex++;
+      if (currentIndex < text.length) {
+        currentIndex++;
+        setDisplayedText(text.slice(0, currentIndex));
       } else {
         clearInterval(interval);
+        setIsComplete(true);
       }
-    }, 100); // 100ms delay between words for smooth ChatGPT-like effect
+    }, 20); // 20ms delay between characters for smooth ChatGPT-like streaming effect
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [text]);
   
-  return <span>{displayedText}</span>;
+  // If streaming is complete, show the full text to ensure nothing is missing
+  return <span>{isComplete ? text : displayedText}</span>;
 }
 
 // Language mapping for Prism.js compatibility
@@ -448,6 +454,27 @@ function ChatInterface() {
     console.log("Sessions array:", chatSessions);
   }, [chatSessions]);
 
+  // Force refresh sessions when user changes
+  useEffect(() => {
+    const loadSessions = async () => {
+      if (user && user.uid) {
+        console.log("🔄 User detected, force refreshing sessions for:", user.email);
+        try {
+          const sessions = await getUserSessions(user.uid);
+          console.log("🔄 Force refresh - got sessions:", sessions.length);
+          if (sessions && sessions.length > 0) {
+            setChatSessions(sessions);
+          }
+        } catch (error) {
+          console.error("🔄 Force refresh error:", error);
+        }
+      }
+    };
+
+    if (user && !authLoading) {
+      loadSessions();
+    }
+  }, [user, authLoading]);
   // Monitor messages state changes - REMOVED AUTO-SORTING to prevent infinite loop
   useEffect(() => {
     console.log("💬 Messages state changed:", messages.length, "messages");
@@ -1323,7 +1350,7 @@ function ChatInterface() {
                   fontWeight: '400',
                   marginTop: '8px'
                 }}>
-                  {message.content}
+                  {isNewMessage ? <WordTypewriter text={message.content} /> : message.content}
                 </p>
               )}
               </div>
