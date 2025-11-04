@@ -880,80 +880,6 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* FIX: Styles for the new custom language dropdown */
-.language-dropdown-wrapper {
-  position: relative;
-}
-
-.language-dropdown-selected {
-  padding: 4px 12px;
-  /* Adjusted padding */
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 100px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: transform 0.3s ease, border-color 0.25s, box-shadow 0.25s, background-color 0.25s ease;
-  text-align: center;
-  min-width: 100px;
-  /* Give it a minimum width */
-}
-
-.language-dropdown-selected:hover {
-  transform: scale(1.05);
-  background: var(--hover-bg);
-  border-color: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
-}
-
-.language-options-list {
-  position: absolute;
-  bottom: 100%;
-  /* Position above the input bar */
-  left: 50%;
-  /* Start smaller and lower for the pop animation */
-  transform: translateX(-50%) translateY(10px) scale(0.95);
-  transform-origin: bottom center;
-  /* Animate from the bottom */
-  margin-bottom: 8px;
-  background: #2a2a2a;
-  border: 1px solid #555;
-  border-radius: 12px;
-  padding: 8px;
-  list-style: none;
-  z-index: 20;
-  /* Ensure it's above other elements */
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
-  /* Animate opacity and transform for the pop effect */
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-
-.language-options-list.list-open {
-  opacity: 1;
-  /* Animate to full size and final position */
-  transform: translateX(-50%) translateY(1px) scale(1);
-  pointer-events: auto;
-}
-
-.language-option {
-  padding: 8px 12px;
-  color: #fff;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.2s ease;
-  font-size: 12px;
-}
-
-.language-option:hover {
-  background: var(--accent);
-  /* Use accent color for hover */
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
 /* VS Code-like code styling */
 .code-wrapper pre {
   background: #181818 !important; /* Updated to match assistant message background */
@@ -1121,14 +1047,22 @@ body {
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
-  opacity: 0.6;
+  opacity: 0; /* Hidden by default */
   font-weight: bold;
-  transform: rotate(90deg);
+  transform: rotate(0deg); /* Vertical dots */
+  letter-spacing: 2px; /* Add gap between dots */
   transition: all 0.2s ease;
+  pointer-events: none; /* Prevent clicks when hidden */
+}
+
+/* Show menu button when hovering over the session */
+.history-session:hover .menu-toggle-btn {
+  opacity: 0.6;
+  pointer-events: auto;
 }
 
 .menu-toggle-btn:hover {
-  opacity: 1;
+  opacity: 1 !important;
   color: var(--primary-color);
 }
 

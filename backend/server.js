@@ -62,7 +62,7 @@ app.post("/api/check-ollama", async (req, res) => {
 
 // ================== Chat Endpoint ==================
 app.post("/api/chat", async (req, res) => {
-    const { prompt, language = "Python", model, apiKey } = req.body;
+    const { prompt, model, apiKey } = req.body;
 
     if (!prompt || !model) {
         return res.status(400).json({
@@ -74,25 +74,27 @@ app.post("/api/chat", async (req, res) => {
     console.log("➡️ Chat request received. Model:", model);
 
     try {
-        // Create a ChatGPT-like conversational prompt
-        const systemPrompt = `You are a helpful AI coding assistant. Be EXTREMELY concise.
+        
+        const systemPrompt = `You are an expert AI coding assistant. You provide helpful, accurate, and concise responses to user questions about programming, technology, and software development.
 
-CRITICAL RULES:
-- For code requests: Write ONLY 1-2 sentences of introduction, then immediately provide the code
-- NO tables, NO bullet points, NO lengthy explanations
-- Let the code comments explain the details
-- For questions: Answer in 2-3 sentences maximum, then provide a code example if relevant
+CORE BEHAVIOR:
+- Default to Python for all code examples unless the user explicitly specifies a different language in their request
+- Detect the programming language from user context (e.g., if they mention "JavaScript function" or "Java class", use that language)
+- Write clean, efficient, and well-commented code
+- Provide brief explanations alongside code when helpful
+- Be conversational and friendly while maintaining professionalism
 
-Example response format:
-"Here's a ${language} program that does what you asked:
+RESPONSE GUIDELINES:
+1. **For code requests**: Provide runnable code in a single markdown code block with the appropriate language tag, followed by a brief explanation
+2. **For conceptual questions**: Give clear, concise answers (2-4 sentences) with code examples when helpful
+3. **Formatting**: Use bullet points sparingly (max 3-4 items) for lists; avoid tables
+4. **Code quality**: Include helpful comments within the code itself
 
-[code here with comments]"
-
-That's it. No more text. Be brief.`;
+Remember: Default to Python unless explicitly told otherwise.`;
 
         const userPrompt = prompt;
         let responseText = "";
-        let detectedLanguage = language || "plaintext";
+        let detectedLanguage = "python"; // Default to Python
 
     // ================== OPENAI ==================
         if (model.toLowerCase().startsWith("gpt-")) {

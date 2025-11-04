@@ -175,6 +175,31 @@ function TypewriterText({ content, isCode = false, language = 'javascript', intr
   );
 }
 
+// Word-by-word typewriter component for intro text (ChatGPT-like effect)
+function WordTypewriter({ text }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const words = text.split(' ');
+  
+  useEffect(() => {
+    let currentWordIndex = 0;
+    const interval = setInterval(() => {
+      if (currentWordIndex < words.length) {
+        setDisplayedText(prev => {
+          const newText = prev + (prev ? ' ' : '') + words[currentWordIndex];
+          return newText;
+        });
+        currentWordIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 100); // 50ms delay between words for smooth ChatGPT-like effect
+    
+    return () => clearInterval(interval);
+  }, [text]);
+  
+  return <span>{displayedText}</span>;
+}
+
 // Language mapping for Prism.js compatibility
 const mapLanguageForSyntaxHighlighter = (language) => {
   const languageMap = {
@@ -199,7 +224,6 @@ function ChatInterface() {
   const [chatSessions, setChatSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(Date.now());
   const [inputValue, setInputValue] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("Python");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
   const handleCopy = async (content) => {
@@ -241,8 +265,6 @@ function ChatInterface() {
   const [showOllamaOptions, setShowOllamaOptions] = useState(false);
   const [hasOllamaOptionsOpened, setHasOllamaOptionsOpened] = useState(false);
   const [ollamaStatus, setOllamaStatus] = useState(null);
-  const [showLanguageOptions, setShowLanguageOptions] = useState(false);
-  const [hasLanguageOptionsOpened, setHasLanguageOptionsOpened] = useState(false);
   const [loading, setLoading] = useState(false);
   const [chatBarPosition, setChatBarPosition] = useState("center");
   const [openMenuId, setOpenMenuId] = useState(null); // Track which three-dot menu is open
@@ -291,11 +313,9 @@ function ChatInterface() {
   const selectorRef = useRef(null);
   const mainContentRef = useRef(null);
   const textareaRef = useRef(null);
-  const languageDropdownRef = useRef(null);
   const abortControllerRef = useRef(null);
   const profileMenuRef = useRef(null);
 
-  const languages = ["Python", "JavaScript", "Java", "C++", "Ruby", "Go", "Rust", "TypeScript", "Swift", "Kotlin"];
   const models = ["gpt-4.1", "Claude", "Gemini-Flash", "Gemini-Pro", "Groq-GPT-OSS-20B", "Groq-Kimi-K2", "Ollama-Local"];
   const ollamaModels = [
     "phi3:3.8b", "mistral:7b", "llama3:8b", "gemma:2b", "gemma3:4b",
@@ -409,9 +429,6 @@ function ChatInterface() {
         setShowSelector(false);
         setShowModelOptions(false);
         setShowOllamaOptions(false);
-      }
-      if (languageDropdownRef.current && !languageDropdownRef.current.contains(e.target)) {
-        setShowLanguageOptions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -593,22 +610,6 @@ function ChatInterface() {
     } else setHasOllamaOptionsOpened(false);
   }, [showOllamaOptions]);
 
-  useEffect(() => {
-    if (showLanguageOptions) {
-      const timer = setTimeout(() => setHasLanguageOptionsOpened(true), 10);
-      return () => clearTimeout(timer);
-    } else setHasLanguageOptionsOpened(false);
-  }, [showLanguageOptions]);
-
-  useEffect(() => {
-    // Only clear API key when switching TO Ollama-Local (since it doesn't need an API key)
-    // Don't clear it when switching away from Ollama-Local to other models
-    if (selectedModel === "Ollama-Local") {
-      // Ollama doesn't need an API key, but don't clear the stored one
-      // in case user switches back to other models
-    }
-  }, [selectedModel]);
-
   // ✅ FIXED addMessage with Firebase integration
   const addMessage = async (content, type, language = null, intro = null) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
@@ -745,16 +746,15 @@ function ChatInterface() {
           method: "POST", 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            prompt: inputValue, language: selectedLanguage, model: modelToUse,
+            prompt: inputValue, model: modelToUse,
             apiKey: selectedModel !== "Ollama-Local" ? apiKey : null,
           }),
           signal: abortControllerRef.current.signal, // Add abort signal to the fetch request
         });
         const data = await res.json();
         if (res.ok && data?.response) {
-          // Ensure the language is always passed correctly, using selectedLanguage as fallback
-          // And ensure it's not undefined or null
-          const responseLanguage = data.language || selectedLanguage;
+          // Ensure the language is always passed correctly
+          const responseLanguage = data.language || "python";
           console.log("Response language:", responseLanguage); // Debug the language
           console.log("Response intro:", data.intro); // Debug the intro
           addMessage(data.response, "assistant", responseLanguage, data.intro);
@@ -938,9 +938,9 @@ function ChatInterface() {
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
+                    <circle cx="4" cy="10" r="1.5" fill="currentColor"/>
                     <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
+                    <circle cx="16" cy="10" r="1.5" fill="currentColor"/>
                   </svg>
                 </button>
                 {profileMenuOpen && (
@@ -1250,7 +1250,7 @@ function ChatInterface() {
                     lineHeight: '1.6',
                     fontWeight: '400'
                   }}>
-                    {message.intro}
+                    {isNewMessage ? <WordTypewriter text={message.intro} /> : message.intro}
                   </p>
                 )}
                 
@@ -1360,21 +1360,6 @@ function ChatInterface() {
                 }
               }}
             />
-            <div className="language-dropdown-wrapper" ref={languageDropdownRef}>
-              <div className="language-dropdown-selected" onClick={() => setShowLanguageOptions(!showLanguageOptions)}>
-                {selectedLanguage}
-              </div>
-              {showLanguageOptions && (
-                <ul className={`language-options-list ${hasLanguageOptionsOpened ? "list-open" : ""}`}>
-                  {languages.map((lang) => (
-                    <li key={lang} className="language-option" onClick={() => {
-                      setSelectedLanguage(lang);
-                      setShowLanguageOptions(false);
-                    }}>{lang}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
             <button className={`send-btn ${inputValue.trim() ? "active" : ""}`} onClick={sendMessage} disabled={!inputValue.trim()}>➤</button>
           </div>
         </div>
