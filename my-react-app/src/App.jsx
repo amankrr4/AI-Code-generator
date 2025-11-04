@@ -192,7 +192,7 @@ function WordTypewriter({ text }) {
       } else {
         clearInterval(interval);
       }
-    }, 100); // 50ms delay between words for smooth ChatGPT-like effect
+    }, 100); // 100ms delay between words for smooth ChatGPT-like effect
     
     return () => clearInterval(interval);
   }, [text]);
@@ -412,13 +412,6 @@ function ChatInterface() {
     }
   }, [messages]);
 
-  // Don't save chat sessions to localStorage - Firebase handles persistence
-  // Removed useEffect that was saving chatSessions to localStorage
-
-  // Don't save session ID to localStorage - Firebase handles this
-  // Removed useEffect that was saving currentSessionId to localStorage
-
-  // Set chat bar position based on whether there are messages
   useEffect(() => {
     setChatBarPosition(messages && messages.length > 0 ? "bottom" : "center");
   }, [messages]);
@@ -647,7 +640,7 @@ function ChatInterface() {
       });
     }, totalDuration);
 
-    // If user is logged in, save message to Firebase
+    
     if (user && currentSessionId) {
       try {
         // Save message to Firebase (role is either 'user' or 'assistant')
@@ -733,8 +726,6 @@ function ChatInterface() {
       setInputValue(""); // Clear input field
       setLoading(true); // Show loading indicator
       
-      // Create a new AbortController for this request and store it in the ref
-      // Cancel any previous request if it exists
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -749,11 +740,11 @@ function ChatInterface() {
             prompt: inputValue, model: modelToUse,
             apiKey: selectedModel !== "Ollama-Local" ? apiKey : null,
           }),
-          signal: abortControllerRef.current.signal, // Add abort signal to the fetch request
+          signal: abortControllerRef.current.signal, 
         });
         const data = await res.json();
         if (res.ok && data?.response) {
-          // Ensure the language is always passed correctly
+
           const responseLanguage = data.language || "python";
           console.log("Response language:", responseLanguage); // Debug the language
           console.log("Response intro:", data.intro); // Debug the intro
@@ -764,11 +755,10 @@ function ChatInterface() {
       } catch (err) {
         console.error("Chat error:", err);
         
-        // Don't show error message if the request was aborted (user clicked New Chat)
         if (err.name === 'AbortError') {
           console.log("Request was aborted");
-          setLoading(false); // Ensure loading is turned off when aborting
-          return; // Don't add any error message as this is intentional
+          setLoading(false); 
+          return; 
         }
         
         let errorMessage = "⚠️ Error contacting backend";
@@ -798,7 +788,7 @@ function ChatInterface() {
     // If user is logged in, create chat in Firebase
     if (user) {
       try {
-        // Create a new chat session in Firebase
+
         const newChatData = await createFirebaseChatSession(user.uid, "New Chat");
         
         // Set the current session to the new one
@@ -859,7 +849,7 @@ function ChatInterface() {
     // Close the menu
     setOpenMenuId(null);
     
-    // If user is logged in, delete from Firebase
+    
     if (user) {
       try {
         await deleteFirebaseSession(sessionId);
@@ -868,18 +858,18 @@ function ChatInterface() {
       }
     }
     
-    // Filter out the session with the given ID (do this regardless of Firebase success)
+    
     setChatSessions(prev => prev.filter(session => session.id !== sessionId));
     
-    // If the deleted session was the current one, create a new chat
+    
     if (sessionId === currentSessionId) {
       newChat();
     }
   };
   
-  // Function to toggle the menu for a specific session
+  
   const toggleMenu = (sessionId, e) => {
-    // Prevent the click from bubbling up to the parent (chat session)
+    
     e.stopPropagation();
     
     // Toggle the menu
@@ -950,7 +940,7 @@ function ChatInterface() {
                       onClick={() => {
                         setShowLogoutConfirmation(true);
                         setProfileMenuOpen(false);
-                        setSidebarOpen(false); // Close sidebar when logout dialog appears
+                        setSidebarOpen(false); 
                       }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -970,7 +960,7 @@ function ChatInterface() {
               onClick={() => {
                 console.log("Sign in button clicked");
                 
-                // Debug Firebase first
+                
                 debugAuth();
                 
                 try {
@@ -1015,7 +1005,7 @@ function ChatInterface() {
               key={session.id} 
               className={`history-session ${session.id === currentSessionId ? 'active' : ''}`}
               onClick={async () => {
-                // Cancel any in-flight requests from the current session before switching
+                
                 if (abortControllerRef.current) {
                   abortControllerRef.current.abort();
                   abortControllerRef.current = null;
@@ -1023,7 +1013,7 @@ function ChatInterface() {
                 
                 setCurrentSessionId(session.id);
                 
-                // If user is logged in, load messages from Firebase
+                
                 if (user) {
                   try {
                     console.log("Loading messages for session:", session.id);
@@ -1171,7 +1161,7 @@ function ChatInterface() {
                   value={apiKey} 
                   onChange={(e) => setApiKey(e.target.value)}
                   onBlur={() => {
-                    // Save API key to Firebase when input loses focus (if user is logged in)
+                    
                     if (user && apiKey) {
                       saveFirebaseApiKey(user.uid, 'openai', apiKey)
                         .catch(err => console.error("Error saving API key:", err));
@@ -1191,13 +1181,13 @@ function ChatInterface() {
               <div className="typing-text">
                 {(() => {
                   if (user) {
-                    // Prefer displayName, fallback to email
+                    
                     let name = user.displayName || user.email || "";
-                    // If displayName is not set, extract from email before @
+                    
                     if (!user.displayName && user.email) {
                       name = user.email.split("@")[0];
                     }
-                    // Use only the first word (first name)
+
                     const firstName = name.split(" ")[0];
                     return `hello there  ${firstName}`;
                   }
@@ -1208,13 +1198,13 @@ function ChatInterface() {
           )}
           <div className="chat-container" ref={chatContainerRef} style={{ marginBottom: '0' }}>
             {messages.map((message) => {
-              // Debug logging for message language
+              
               console.log(`Message ID ${message.id} Type: ${message.type} Language: ${message.language}`);
               
               const isNewMessage = newMessageIds.has(message.id);
               const isNewAssistantMessage = isNewMessage && message.type === 'assistant';
               
-              // For user messages - no wrapper needed, render directly
+              
               if (message.type === "user") {
                 return (
                   <div key={message.id} className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
@@ -1237,7 +1227,7 @@ function ChatInterface() {
                 );
               }
               
-              // For assistant messages - use wrapper for intro
+              
               return (
               <div key={message.id}>
                 {/* Intro text - OUTSIDE the message box */}
@@ -1255,6 +1245,8 @@ function ChatInterface() {
                 )}
                 
                 {/* Message box - contains ONLY the code/content */}
+                {/* Show message box only if there's actual code (not plaintext or error) */}
+                {message.language && message.language !== "plaintext" ? (
                 <div className={`message ${message.type} ${isNewMessage ? 'message-animate' : ''}`}>
                 {/* Copy button for assistant messages */}
                 <button
@@ -1272,7 +1264,7 @@ function ChatInterface() {
                   </svg>
                 </button>
                 {isNewAssistantMessage ? (
-                  // Show typewriter effect for new assistant messages only
+                  
                   <TypewriterText 
                     content={message.content} 
                     isCode={message.language && message.language !== "plaintext"} 
@@ -1280,9 +1272,8 @@ function ChatInterface() {
                     intro={message.intro}
                   />
                 ) : (
-                  // Show normal rendering for existing messages
+                  
                   <>
-                    {message.language && message.language !== "plaintext" ? (
                       <div className="vs-code-container">
                         <SyntaxHighlighter
                         language={mapLanguageForSyntaxHighlighter(message.language)}
@@ -1320,12 +1311,21 @@ function ChatInterface() {
                         {message.content}
                       </SyntaxHighlighter>
                     </div>
-                  ) : (
-                    message.content
-                  )}
                   </>
                 )}
               </div>
+              ) : (
+                /* Render plaintext messages without the code box */
+                <p style={{ 
+                  color: message.content.includes('⚠️') || message.content.toLowerCase().includes('error') ? '#ff6b6b' : '#e3e3e3',
+                  fontSize: '15px',
+                  lineHeight: '1.6',
+                  fontWeight: '400',
+                  marginTop: '8px'
+                }}>
+                  {message.content}
+                </p>
+              )}
               </div>
             );
             })}
