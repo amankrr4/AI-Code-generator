@@ -179,31 +179,164 @@ function TypewriterText({ content, isCode = false, language = 'javascript', intr
 function WordTypewriter({ text }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
+  const animationFrameRef = useRef(null);
+  const startTimeRef = useRef(null);
   
   useEffect(() => {
     if (!text) return;
     
     setDisplayedText(''); // Reset on text change
     setIsComplete(false);
-    let currentIndex = 0;
+    startTimeRef.current = null;
     
-    const interval = setInterval(() => {
-      if (currentIndex < text.length) {
-        currentIndex++;
-        setDisplayedText(text.slice(0, currentIndex));
+    const charsPerSecond = 35; // Adjust this for speed (higher = faster)
+    
+    const animate = (timestamp) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
+      
+      const elapsed = timestamp - startTimeRef.current;
+      const charsToShow = Math.floor((elapsed / 1000) * charsPerSecond);
+      
+      if (charsToShow < text.length) {
+        setDisplayedText(text.slice(0, charsToShow + 1));
+        animationFrameRef.current = requestAnimationFrame(animate);
       } else {
-        clearInterval(interval);
+        setDisplayedText(text);
         setIsComplete(true);
       }
-    }, 20); // 20ms delay between characters for smooth ChatGPT-like streaming effect
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
     
     return () => {
-      clearInterval(interval);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [text]);
   
-  // If streaming is complete, show the full text to ensure nothing is missing
-  return <span>{isComplete ? text : displayedText}</span>;
+  // Always show displayedText to avoid jumps
+  return <span>{displayedText}</span>;
+}
+
+// Simple Markdown renderer for plaintext responses
+function MarkdownText({ text }) {
+  const renderText = (content) => {
+    // Split by lines to handle bullets and paragraphs
+    const lines = content.split('\n');
+    const elements = [];
+    let currentParagraph = [];
+    
+    lines.forEach((line, index) => {
+      // Handle bullet points (-, *, •)
+      if (line.trim().match(/^[-*•]\s+/)) {
+        // Close any open paragraph
+        if (currentParagraph.length > 0) {
+          elements.push(
+            <p key={`p-${index}`} style={{ marginBottom: '8px' }}>
+              {parseBoldText(currentParagraph.join(' '))}
+            </p>
+          );
+          currentParagraph = [];
+        }
+        
+        // Add bullet point
+        const bulletContent = line.trim().replace(/^[-*•]\s+/, '');
+        elements.push(
+          <div key={`bullet-${index}`} style={{ 
+            display: 'flex', 
+            marginLeft: '20px', 
+            marginBottom: '4px',
+            alignItems: 'flex-start'
+          }}>
+            <span style={{ marginRight: '8px', minWidth: '8px' }}>•</span>
+            <span>{parseBoldText(bulletContent)}</span>
+          </div>
+        );
+      } else if (line.trim() === '') {
+        // Empty line - close paragraph if open
+        if (currentParagraph.length > 0) {
+          elements.push(
+            <p key={`p-${index}`} style={{ marginBottom: '12px' }}>
+              {parseBoldText(currentParagraph.join(' '))}
+            </p>
+          );
+          currentParagraph = [];
+        }
+      } else {
+        // Regular line - add to current paragraph
+        currentParagraph.push(line.trim());
+      }
+    });
+    
+    // Close any remaining paragraph
+    if (currentParagraph.length > 0) {
+      elements.push(
+        <p key={`p-final`} style={{ marginBottom: '8px' }}>
+          {parseBoldText(currentParagraph.join(' '))}
+        </p>
+      );
+    }
+    
+    return elements;
+  };
+  
+  // Parse **bold** text
+  const parseBoldText = (text) => {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+  
+  return <div>{renderText(text)}</div>;
+}
+
+// Word-by-word typewriter with markdown support
+function WordTypewriterMarkdown({ text }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const animationFrameRef = useRef(null);
+  const startTimeRef = useRef(null);
+  
+  useEffect(() => {
+    if (!text) return;
+    
+    setDisplayedText('');
+    startTimeRef.current = null;
+    
+    const charsPerSecond = 35;
+    
+    const animate = (timestamp) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
+      
+      const elapsed = timestamp - startTimeRef.current;
+      const charsToShow = Math.floor((elapsed / 1000) * charsPerSecond);
+      
+      if (charsToShow < text.length) {
+        setDisplayedText(text.slice(0, charsToShow + 1));
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayedText(text);
+      }
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [text]);
+  
+  return <MarkdownText text={displayedText} />;
 }
 
 // Language mapping for Prism.js compatibility
@@ -220,7 +353,7 @@ const mapLanguageForSyntaxHighlighter = (language) => {
   const lowerLang = language.toLowerCase();
   return languageMap[lowerLang] || lowerLang;
 };
-
+ 
 function ChatInterface() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -631,7 +764,7 @@ function ChatInterface() {
   }, [showOllamaOptions]);
 
   // ✅ FIXED addMessage with Firebase integration
-  const addMessage = async (content, type, language = null, intro = null) => {
+  const addMessage = async (content, type, language = null, intro = null, isError = false) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
     // Use a more precise timestamp for message ID to ensure ordering
     const messageId = Date.now() + Math.random();
@@ -642,6 +775,7 @@ function ChatInterface() {
       content: safeContent,
       language,
       intro: intro || null, // Add intro field
+      isError: isError, // Add error flag
       timestamp: new Date().toISOString()
     };
     
@@ -654,9 +788,23 @@ function ChatInterface() {
     // Calculate animation duration based on content length
     const lines = safeContent.split('\n');
     const isCodeContent = language && language !== "plaintext";
-    const baseDelay = isCodeContent ? 300 : 150; // ms per line
-    const animationDuration = isCodeContent ? 500 : 400; // ms for each line animation
-    const totalDuration = (lines.length * baseDelay) + animationDuration + 500; // Extra 500ms buffer
+    
+    let contentDuration;
+    if (isCodeContent) {
+      // Code content animates line by line
+      const baseDelay = 300; // ms per line
+      const animationDuration = 500; // ms for each line animation
+      contentDuration = (lines.length * baseDelay) + animationDuration;
+    } else {
+      // Plaintext content streams character by character (35 chars per second from WordTypewriter)
+      contentDuration = (safeContent.length / 35) * 1000;
+    }
+    
+    // Calculate intro text streaming duration (35 chars per second from WordTypewriter)
+    const introDuration = intro ? (intro.length / 35) * 1000 : 0;
+    
+    // Total duration is the LONGER of intro or content, plus buffer
+    const totalDuration = Math.max(contentDuration, introDuration) + 1000; // Extra 1s buffer
 
     // Remove animation after calculated duration
     setTimeout(() => {
@@ -777,7 +925,7 @@ function ChatInterface() {
           console.log("Response intro:", data.intro); // Debug the intro
           addMessage(data.response, "assistant", responseLanguage, data.intro);
         } else {
-          addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext");
+          addMessage(`⚠️ ${data.error || "Error contacting backend"}`, "assistant", "plaintext", null, true);
         }
       } catch (err) {
         console.error("Chat error:", err);
@@ -792,7 +940,7 @@ function ChatInterface() {
         if (err.name === 'TypeError' && err.message.includes('fetch')) {
           errorMessage = "⚠️ Network error - please check your internet connection";
         }
-        addMessage(errorMessage, "assistant", "plaintext");
+        addMessage(errorMessage, "assistant", "plaintext", null, true);
       } finally {
         
         setLoading(false); // Hide loading indicator
@@ -1343,15 +1491,15 @@ function ChatInterface() {
               </div>
               ) : (
                 /* Render plaintext messages without the code box */
-                <p style={{ 
-                  color: message.content.includes('⚠️') || message.content.toLowerCase().includes('error') ? '#ff6b6b' : '#e3e3e3',
+                <div style={{ 
+                  color: message.isError ? '#ff6b6b' : '#e3e3e3',
                   fontSize: '15px',
                   lineHeight: '1.6',
                   fontWeight: '400',
                   marginTop: '8px'
                 }}>
-                  {isNewMessage ? <WordTypewriter text={message.content} /> : message.content}
-                </p>
+                  {isNewMessage ? <WordTypewriterMarkdown text={message.content} /> : <MarkdownText text={message.content} />}
+                </div>
               )}
               </div>
             );
