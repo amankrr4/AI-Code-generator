@@ -222,63 +222,126 @@ function WordTypewriter({ text }) {
 }
 
 // Simple Markdown renderer for plaintext responses
-function MarkdownText({ text }) {
+function MarkdownText({ text, isError = false }) {
+  // If it's an error, use red color for everything, otherwise use normal colors
+  const textColor = isError ? '#ff6b6b' : '#e3e3e3';
+  const headerColor = isError ? '#ff6b6b' : '#4EC9B0';
+  const bulletColor = isError ? '#ff6b6b' : '#569CD6';
+  const boldColor = isError ? '#ff6b6b' : '#E3E3E3';
+  
   const renderText = (content) => {
     // Split by lines to handle bullets and paragraphs
     const lines = content.split('\n');
     const elements = [];
     let currentParagraph = [];
+    let currentBulletGroup = [];
+    
+    const flushParagraph = (index) => {
+      if (currentParagraph.length > 0) {
+        elements.push(
+          <p key={`p-${index}`} style={{ marginBottom: '12px', lineHeight: '1.6' }}>
+            {parseBoldText(currentParagraph.join(' '))}
+          </p>
+        );
+        currentParagraph = [];
+      }
+    };
+    
+    const flushBullets = (index) => {
+      if (currentBulletGroup.length > 0) {
+        elements.push(
+          <div key={`bullets-${index}`} style={{ marginBottom: '16px' }}>
+            {currentBulletGroup}
+          </div>
+        );
+        currentBulletGroup = [];
+      }
+    };
     
     lines.forEach((line, index) => {
-      // Handle bullet points (-, *, •)
-      if (line.trim().match(/^[-*•]\s+/)) {
-        // Close any open paragraph
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} style={{ marginBottom: '8px' }}>
-              {parseBoldText(currentParagraph.join(' '))}
-            </p>
-          );
-          currentParagraph = [];
-        }
+      const trimmed = line.trim();
+      
+      // Check if this is a section header (bold text followed by colon or just bold at start of line)
+      // Headers can appear with or without bullet markers, so check for both
+      // Matches: **Header**, **Header:**, **Header:** text, or - **Header**
+      let headerMatch = trimmed.match(/^\*\*([^*]+)\*\*:?\s*(.*)?$/);
+      
+      // Also check if there's a bullet marker before the bold text
+      if (!headerMatch) {
+        headerMatch = trimmed.match(/^[-*•]\s*\*\*([^*]+)\*\*:?\s*(.*)?$/);
+      }
+      
+      if (headerMatch) {
+        // This is a section header
+        flushParagraph(index);
+        flushBullets(index);
         
-        // Add bullet point
-        const bulletContent = line.trim().replace(/^[-*•]\s+/, '');
+        const headerText = headerMatch[1];
+        const remainingText = headerMatch[2];
+        
         elements.push(
+          <div key={`header-${index}`} style={{ 
+            marginTop: '20px',
+            marginBottom: '12px'
+          }}>
+            <h3 style={{ 
+              color: headerColor, // Use dynamic color based on isError
+              fontSize: '16px',
+              fontWeight: '600',
+              margin: '0 0 8px 0',
+              letterSpacing: '0.3px'
+            }}>
+              {headerText}
+            </h3>
+            {remainingText && (
+              <p style={{ margin: '4px 0 0 0', lineHeight: '1.6', color: textColor }}>
+                {parseBoldText(remainingText)}
+              </p>
+            )}
+          </div>
+        );
+      } else if (trimmed.match(/^[-*•]\s+/)) {
+        // This is a bullet point
+        flushParagraph(index);
+        
+        // Remove the bullet marker and any leading bullet character
+        let bulletContent = trimmed.replace(/^[-*•]\s+/, '');
+        // Also remove any leading • character that might be in the content itself
+        bulletContent = bulletContent.replace(/^•\s*/, '');
+        
+        currentBulletGroup.push(
           <div key={`bullet-${index}`} style={{ 
             display: 'flex', 
-            marginLeft: '20px', 
-            marginBottom: '4px',
-            alignItems: 'flex-start'
+            marginLeft: '8px', 
+            marginBottom: '6px',
+            alignItems: 'flex-start',
+            lineHeight: '1.6',
+            color: textColor
           }}>
-            <span style={{ marginRight: '8px', minWidth: '8px' }}>•</span>
+            <span style={{ 
+              marginRight: '12px', 
+              minWidth: '6px',
+              color: bulletColor, // Use dynamic bullet color
+              fontSize: '18px',
+              lineHeight: '1.3'
+            }}>•</span>
             <span>{parseBoldText(bulletContent)}</span>
           </div>
         );
-      } else if (line.trim() === '') {
-        // Empty line - close paragraph if open
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} style={{ marginBottom: '12px' }}>
-              {parseBoldText(currentParagraph.join(' '))}
-            </p>
-          );
-          currentParagraph = [];
-        }
+      } else if (trimmed === '') {
+        // Empty line - close current groups
+        flushParagraph(index);
+        flushBullets(index);
       } else {
-        // Regular line - add to current paragraph
-        currentParagraph.push(line.trim());
+        // Regular line - close bullets and add to paragraph
+        flushBullets(index);
+        currentParagraph.push(trimmed);
       }
     });
     
-    // Close any remaining paragraph
-    if (currentParagraph.length > 0) {
-      elements.push(
-        <p key={`p-final`} style={{ marginBottom: '8px' }}>
-          {parseBoldText(currentParagraph.join(' '))}
-        </p>
-      );
-    }
+    // Close any remaining groups
+    flushParagraph(lines.length);
+    flushBullets(lines.length);
     
     return elements;
   };
@@ -288,7 +351,7 @@ function MarkdownText({ text }) {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
+        return <strong key={i} style={{ fontWeight: '600', color: boldColor }}>{part.slice(2, -2)}</strong>;
       }
       return part;
     });
@@ -298,7 +361,7 @@ function MarkdownText({ text }) {
 }
 
 // Word-by-word typewriter with markdown support
-function WordTypewriterMarkdown({ text }) {
+function WordTypewriterMarkdown({ text, isError = false }) {
   const [displayedText, setDisplayedText] = useState('');
   const animationFrameRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -336,7 +399,7 @@ function WordTypewriterMarkdown({ text }) {
     };
   }, [text]);
   
-  return <MarkdownText text={displayedText} />;
+  return <MarkdownText text={displayedText} isError={isError} />;
 }
 
 // Language mapping for Prism.js compatibility
@@ -1498,7 +1561,11 @@ function ChatInterface() {
                   fontWeight: '400',
                   marginTop: '8px'
                 }}>
-                  {isNewMessage ? <WordTypewriterMarkdown text={message.content} /> : <MarkdownText text={message.content} />}
+                  {isNewMessage ? (
+                    <WordTypewriterMarkdown text={message.content} isError={message.isError} />
+                  ) : (
+                    <MarkdownText text={message.content} isError={message.isError} />
+                  )}
                 </div>
               )}
               </div>
