@@ -682,9 +682,9 @@ function ChatInterface() {
     }
   }, [messages]);
 
-  // Firebase authentication listener
+  
   useEffect(() => {
-    // Debug authentication status
+    
     debugAuth();
     
     let isInitialLoad = true;
@@ -697,7 +697,7 @@ function ChatInterface() {
       setAuthLoading(false);
       
       if (currentUser) {
-        // Load user's chat sessions from Firebase
+        
         const loadUserSessions = async () => {
           try {
             console.log("📥 Loading sessions for user:", currentUser.uid);
@@ -710,7 +710,7 @@ function ChatInterface() {
               console.log("✅ Chat sessions loaded from Firebase:", sessions.length, "sessions available");
               console.log("Sessions:", JSON.stringify(sessions, null, 2));
               
-              // Verify state was set (this will show in next render)
+
               setTimeout(() => {
                 console.log("⏱️ Verifying chatSessions state after 1 second...");
               }, 1000);
@@ -721,9 +721,15 @@ function ChatInterface() {
                 const messages = await getSessionMessages(firstSession.id);
                 console.log("💬 Loaded messages for current session:", messages.length);
                 
-                // Ensure messages are sorted before setting state
+                // Ensure messages are sorted and add isError flag if missing
                 const sortedMessages = [...messages].sort((a, b) => {
                   return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                }).map(msg => {
+                  // Add isError flag for error messages if it's missing
+                  if (msg.isError === undefined && msg.content && msg.content.startsWith('⚠️')) {
+                    return { ...msg, isError: true };
+                  }
+                  return msg;
                 });
                 
                 setMessages(sortedMessages);
@@ -731,12 +737,12 @@ function ChatInterface() {
                 setChatBarPosition(sortedMessages && sortedMessages.length > 0 ? "bottom" : "center");
               } catch (error) {
                 console.error("❌ Error loading session messages:", error);
-                // Start with empty messages if loading fails
+                
                 setMessages([]);
                 setCurrentSessionId(firstSession.id);
               }
             } else {
-              // No sessions in Firebase, create a new one
+              
               console.log("🆕 No sessions found in Firebase, creating new session");
               try {
                 const newChatData = await createFirebaseChatSession(currentUser.uid, "New Chat");
@@ -752,11 +758,11 @@ function ChatInterface() {
               }
             }
             
-            // Load user's API keys
+            
             loadApiKeys(currentUser.uid);
           } catch (error) {
             console.error("❌ Error loading user data:", error);
-            // On error, start with empty sessions
+            
             setChatSessions([]);
             setMessages([]);
           }
@@ -764,8 +770,7 @@ function ChatInterface() {
         
         loadUserSessions();
       } else if (!isInitialLoad) {
-        // Only clear on explicit logout, not on initial mount
-        // User logged out - clear all chat state and user-specific data
+        
         console.log("👋 User logged out, clearing chat state");
         setMessages([]);
         setChatSessions([]);
@@ -826,10 +831,10 @@ function ChatInterface() {
     } else setHasOllamaOptionsOpened(false);
   }, [showOllamaOptions]);
 
-  // ✅ FIXED addMessage with Firebase integration
+
   const addMessage = async (content, type, language = null, intro = null, isError = false) => {
     const safeContent = content === null || content === undefined ? "" : String(content);
-    // Use a more precise timestamp for message ID to ensure ordering
+
     const messageId = Date.now() + Math.random();
     
     const newMessage = {
@@ -1258,9 +1263,15 @@ function ChatInterface() {
                     const messages = await getSessionMessages(session.id);
                     console.log("Loaded messages from Firebase:", messages.length);
                     
-                    // Ensure messages are sorted by timestamp before setting state
+                    // Ensure messages are sorted by timestamp and add isError flag if missing
                     const sortedMessages = [...messages].sort((a, b) => {
                       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+                    }).map(msg => {
+                      // Add isError flag for error messages if it's missing
+                      if (msg.isError === undefined && msg.content && msg.content.startsWith('⚠️')) {
+                        return { ...msg, isError: true };
+                      }
+                      return msg;
                     });
                     
                     console.log("Messages sorted, setting state");
