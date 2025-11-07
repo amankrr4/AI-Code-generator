@@ -511,6 +511,7 @@ function ChatInterface() {
   };
 
   const chatContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
   const chatScrollAreaRef = useRef(null);
   const selectorRef = useRef(null);
   const mainContentRef = useRef(null);
@@ -681,6 +682,30 @@ function ChatInterface() {
       });
     }
   }, [messages]);
+
+  // Auto-scroll to bottom when messages change or during loading/streaming
+  useEffect(() => {
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+      }
+    };
+
+    // Immediate scroll
+    scrollToBottom();
+
+    // Continue scrolling if loading (during streaming)
+    let intervalId;
+    if (loading || newMessageIds.size > 0) {
+      intervalId = setInterval(scrollToBottom, 50); // Scroll every 50ms during streaming
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [messages, loading, newMessageIds]);
 
   
   useEffect(() => {
@@ -1591,6 +1616,8 @@ function ChatInterface() {
                 <div className="circle"><div className="dot"></div><div className="outline"></div></div>
               </div>
             )}
+            {/* Invisible element to scroll to */}
+            <div ref={messagesEndRef} style={{ height: '1px' }} />
           </div>
         </div>
 
