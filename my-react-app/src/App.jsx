@@ -424,7 +424,11 @@ function ChatInterface() {
   
   // Don't initialize from localStorage - let Firebase handle session state
   const [chatSessions, setChatSessions] = useState([]);
-  const [currentSessionId, setCurrentSessionId] = useState(Date.now());
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    // Try to restore the last viewed session from localStorage
+    const savedSessionId = localStorage.getItem('currentSessionId');
+    return savedSessionId || Date.now();
+  });
   const [inputValue, setInputValue] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
 
@@ -740,10 +744,16 @@ function ChatInterface() {
                 console.log("⏱️ Verifying chatSessions state after 1 second...");
               }, 1000);
               
-              // Load messages for the first (most recent) session
-              const firstSession = sessions[0];
+              // Try to restore the last viewed session, otherwise use the first (most recent) session
+              const savedSessionId = localStorage.getItem('currentSessionId');
+              const sessionToLoad = savedSessionId 
+                ? sessions.find(s => s.id === savedSessionId) || sessions[0]
+                : sessions[0];
+              
+              console.log("📂 Loading session:", savedSessionId ? `Restoring saved session ${savedSessionId}` : "Loading most recent session");
+              
               try {
-                const messages = await getSessionMessages(firstSession.id);
+                const messages = await getSessionMessages(sessionToLoad.id);
                 console.log("💬 Loaded messages for current session:", messages.length);
                 
                 // Ensure messages are sorted and add isError flag if missing
@@ -758,13 +768,13 @@ function ChatInterface() {
                 });
                 
                 setMessages(sortedMessages);
-                setCurrentSessionId(firstSession.id);
+                setCurrentSessionId(sessionToLoad.id);
                 setChatBarPosition(sortedMessages && sortedMessages.length > 0 ? "bottom" : "center");
               } catch (error) {
                 console.error("❌ Error loading session messages:", error);
                 
                 setMessages([]);
-                setCurrentSessionId(firstSession.id);
+                setCurrentSessionId(sessionToLoad.id);
               }
             } else {
               
@@ -855,6 +865,13 @@ function ChatInterface() {
       return () => clearTimeout(timer);
     } else setHasOllamaOptionsOpened(false);
   }, [showOllamaOptions]);
+
+  // Save currentSessionId to localStorage whenever it changes
+  useEffect(() => {
+    if (currentSessionId) {
+      localStorage.setItem('currentSessionId', currentSessionId);
+    }
+  }, [currentSessionId]);
 
 
   const addMessage = async (content, type, language = null, intro = null, isError = false) => {
