@@ -235,6 +235,8 @@ function MarkdownText({ text, isError = false }) {
     const elements = [];
     let currentParagraph = [];
     let currentBulletGroup = [];
+    let currentTable = null;
+    let tableStartIndex = -1;
     
     const flushParagraph = (index) => {
       if (currentParagraph.length > 0) {
@@ -258,8 +260,125 @@ function MarkdownText({ text, isError = false }) {
       }
     };
     
+    const flushTable = (index) => {
+      if (currentTable && currentTable.rows.length > 0) {
+        elements.push(
+          <div key={`table-${tableStartIndex}`} style={{ 
+            marginBottom: '20px', 
+            overflowX: 'auto',
+            borderRadius: '8px',
+            border: `1px solid ${isError ? '#ff6b6b40' : '#4EC9B040'}`
+          }}>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              fontSize: '14px'
+            }}>
+              <thead>
+                <tr style={{ 
+                  backgroundColor: isError ? '#ff6b6b20' : '#4EC9B020',
+                  borderBottom: `2px solid ${isError ? '#ff6b6b' : '#4EC9B0'}`
+                }}>
+                  {currentTable.headers.map((header, i) => (
+                    <th key={i} style={{ 
+                      padding: '12px 16px',
+                      textAlign: 'left',
+                      fontWeight: '600',
+                      color: headerColor,
+                      borderRight: i < currentTable.headers.length - 1 ? `1px solid ${isError ? '#ff6b6b20' : '#4EC9B020'}` : 'none'
+                    }}>
+                      {parseBoldText(header.trim())}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentTable.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex} style={{ 
+                    borderBottom: rowIndex < currentTable.rows.length - 1 ? `1px solid ${isError ? '#ff6b6b20' : '#4EC9B020'}` : 'none'
+                  }}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex} style={{ 
+                        padding: '12px 16px',
+                        color: textColor,
+                        lineHeight: '1.5',
+                        borderRight: cellIndex < row.length - 1 ? `1px solid ${isError ? '#ff6b6b20' : '#4EC9B020'}` : 'none'
+                      }}>
+                        {parseBoldText(cell.trim())}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        currentTable = null;
+        tableStartIndex = -1;
+      }
+    };
+    
     lines.forEach((line, index) => {
       const trimmed = line.trim();
+      
+      // Check if this is a markdown table row (contains |)
+      if (trimmed.includes('|') && trimmed.split('|').length >= 3) {
+        flushParagraph(index);
+        flushBullets(index);
+        
+        const cells = trimmed.split('|').map(cell => cell.trim()).filter(cell => cell !== '');
+        
+        // Check if this is a separator row (---|---|---)
+        const isSeparator = cells.every(cell => /^[-:]+$/.test(cell));
+        
+        if (isSeparator) {
+          // Skip separator rows, they're just formatting
+          return;
+        }
+        
+        // If we haven't started a table yet, this is the header row
+        if (!currentTable) {
+          currentTable = { headers: cells, rows: [] };
+          tableStartIndex = index;
+        } else {
+          // This is a data row
+          currentTable.rows.push(cells);
+        }
+        return;
+      }
+      
+      // If we were building a table and hit a non-table line, flush the table
+      if (currentTable) {
+        flushTable(index);
+      }
+      
+      // Check if this line ends with a colon (likely an intro to a list)
+      // Matches: "The typical flow:", "Here's how:", etc.
+      const colonMatch = trimmed.match(/^(.+):$/);
+      
+      if (colonMatch && index < lines.length - 1) {
+        // Check if the next line is a list item
+        const nextLine = lines[index + 1]?.trim();
+        const isNextLineList = nextLine && (nextLine.match(/^[-*•]\s+/) || nextLine.match(/^\d+\.\s+/));
+        
+        if (isNextLineList) {
+          // This is a list introduction - make it bold
+          flushParagraph(index);
+          flushBullets(index);
+          
+          elements.push(
+            <p key={`intro-${index}`} style={{ 
+              marginBottom: '8px', 
+              lineHeight: '1.6',
+              fontWeight: '600',
+              color: boldColor
+            }}>
+              {colonMatch[1]}:
+            </p>
+          );
+          return; // Skip further processing for this line
+        }
+      }
       
       // Check if this is a section header (bold text followed by colon or just bold at start of line)
       // Headers can appear with or without bullet markers, so check for both
@@ -300,34 +419,63 @@ function MarkdownText({ text, isError = false }) {
             )}
           </div>
         );
-      } else if (trimmed.match(/^[-*•]\s+/)) {
-        // This is a bullet point
+      } else if (trimmed.match(/^[-*•]\s+/) || trimmed.match(/^\d+\.\s+/)) {
+        // This is a bullet point or numbered list item
         flushParagraph(index);
         
-        // Remove the bullet marker and any leading bullet character
-        let bulletContent = trimmed.replace(/^[-*•]\s+/, '');
-        // Also remove any leading • character that might be in the content itself
-        bulletContent = bulletContent.replace(/^•\s*/, '');
+        // Check if it's a numbered list
+        const numberedMatch = trimmed.match(/^(\d+)\.\s+(.+)/);
         
-        currentBulletGroup.push(
-          <div key={`bullet-${index}`} style={{ 
-            display: 'flex', 
-            marginLeft: '8px', 
-            marginBottom: '6px',
-            alignItems: 'flex-start',
-            lineHeight: '1.6',
-            color: textColor
-          }}>
-            <span style={{ 
-              marginRight: '12px', 
-              minWidth: '6px',
-              color: bulletColor, // Use dynamic bullet color
-              fontSize: '18px',
-              lineHeight: '1.3'
-            }}>•</span>
-            <span>{parseBoldText(bulletContent)}</span>
-          </div>
-        );
+        if (numberedMatch) {
+          // Numbered list item
+          const number = numberedMatch[1];
+          const content = numberedMatch[2];
+          
+          currentBulletGroup.push(
+            <div key={`bullet-${index}`} style={{ 
+              display: 'flex', 
+              marginLeft: '8px', 
+              marginBottom: '6px',
+              alignItems: 'flex-start',
+              lineHeight: '1.6',
+              color: textColor
+            }}>
+              <span style={{ 
+                marginRight: '12px', 
+                minWidth: '20px',
+                color: bulletColor,
+                fontSize: '14px',
+                lineHeight: '1.6',
+                fontWeight: '500'
+              }}>{number}.</span>
+              <span>{parseBoldText(content)}</span>
+            </div>
+          );
+        } else {
+          // Regular bullet point
+          let bulletContent = trimmed.replace(/^[-*•]\s+/, '');
+          bulletContent = bulletContent.replace(/^•\s*/, '');
+          
+          currentBulletGroup.push(
+            <div key={`bullet-${index}`} style={{ 
+              display: 'flex', 
+              marginLeft: '8px', 
+              marginBottom: '6px',
+              alignItems: 'flex-start',
+              lineHeight: '1.6',
+              color: textColor
+            }}>
+              <span style={{ 
+                marginRight: '12px', 
+                minWidth: '6px',
+                color: bulletColor,
+                fontSize: '18px',
+                lineHeight: '1.3'
+              }}>•</span>
+              <span>{parseBoldText(bulletContent)}</span>
+            </div>
+          );
+        }
       } else if (trimmed === '') {
         // Empty line - close current groups
         flushParagraph(index);
@@ -342,6 +490,7 @@ function MarkdownText({ text, isError = false }) {
     // Close any remaining groups
     flushParagraph(lines.length);
     flushBullets(lines.length);
+    flushTable(lines.length);
     
     return elements;
   };
@@ -479,6 +628,8 @@ function ChatInterface() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false); // Track if profile menu is open
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false); // Track if logout confirmation is open
   const [newMessageIds, setNewMessageIds] = useState(new Set()); // Track new messages for animation
+  const [attachedFiles, setAttachedFiles] = useState([]); // Track attached files/images
+  const fileInputRef = useRef(null); // Reference to hidden file input
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -1092,6 +1243,41 @@ function ChatInterface() {
     }
   };
   
+  // Handle file attachment
+  const handleFileAttach = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newFiles = files.map(file => ({
+      file,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+    }));
+
+    setAttachedFiles(prev => [...prev, ...newFiles]);
+    
+    // Reset file input
+    e.target.value = '';
+  };
+
+  const removeAttachedFile = (index) => {
+    setAttachedFiles(prev => {
+      const newFiles = [...prev];
+      // Revoke object URL if it's an image preview
+      if (newFiles[index].preview) {
+        URL.revokeObjectURL(newFiles[index].preview);
+      }
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
   // Create a new chat locally (when not logged in)
   const localNewChat = () => {
     // Create a new chat session with a new ID
@@ -1639,7 +1825,49 @@ function ChatInterface() {
         </div>
 
         <div className={`input-container chat-bar ${chatBarPosition === "center" ? "center" : "bottom"}`} style={{ border: 'none', boxShadow: 'none' }}>
+          {/* File attachments preview */}
+          {attachedFiles.length > 0 && (
+            <div className="attachments-preview">
+              {attachedFiles.map((file, index) => (
+                <div key={index} className="attachment-item">
+                  {file.preview ? (
+                    <img src={file.preview} alt={file.name} className="attachment-preview-img" />
+                  ) : (
+                    <div className="attachment-file-icon">📄</div>
+                  )}
+                  <span className="attachment-name">{file.name}</span>
+                  <button 
+                    className="remove-attachment-btn" 
+                    onClick={() => removeAttachedFile(index)}
+                    title="Remove file"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="input-wrapper">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt,.json,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.html,.css"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            
+            {/* Plus button for file attachment */}
+            <button 
+              className="attach-btn" 
+              onClick={handleFileAttach}
+              title="Attach file or image"
+            >
+              +
+            </button>
+            
             <textarea
               ref={textareaRef} 
               rows={1} 

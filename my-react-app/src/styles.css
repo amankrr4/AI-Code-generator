@@ -582,9 +582,119 @@ body {
   transition: height 0.3s ease-in-out;
 }
 
+/* Attach button */
+.attach-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid #444;
+  color: #b0b0b0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 300;
+  margin-right: 8px;
+  transition: all 0.2s;
+}
+
+.attach-btn:hover {
+  background: #2d2d2d;
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.attach-btn:active {
+  transform: scale(0.95);
+}
+
+/* File attachments preview */
+.attachments-preview {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 8px 16px;
+  flex-wrap: wrap;
+  background: #1a1a1a;
+  border-top: 1px solid #2d2d2d;
+}
+
+.attachment-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 8px;
+  max-width: 200px;
+  transition: all 0.2s;
+}
+
+.attachment-item:hover {
+  background: #3a3a3a;
+  border-color: var(--accent);
+}
+
+.attachment-preview-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.attachment-file-icon {
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-name {
+  font-size: 13px;
+  color: #e3e3e3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.remove-attachment-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  border: 2px solid #1a1a1a;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.remove-attachment-btn:hover {
+  background: #ff7875;
+  transform: scale(1.1);
+}
+
 .send-btn {
   width: 36px;
   height: 36px;
+  min-width: 36px;
   border-radius: 50%;
   background: var(--accent);
   border: none;
