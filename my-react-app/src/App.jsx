@@ -630,6 +630,8 @@ function ChatInterface() {
   const [newMessageIds, setNewMessageIds] = useState(new Set()); // Track new messages for animation
   const [attachedFiles, setAttachedFiles] = useState([]); // Track attached files/images
   const fileInputRef = useRef(null); // Reference to hidden file input
+  const [showAttachMenu, setShowAttachMenu] = useState(false); // Track attach menu visibility
+  const attachMenuRef = useRef(null); // Reference to attach menu for click outside detection
 
   const getApiUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -998,10 +1000,17 @@ function ChatInterface() {
           !e.target.closest('.profile-menu-btn')) {
         setProfileMenuOpen(false);
       }
+
+      // Close attach menu when clicking outside
+      if (showAttachMenu && attachMenuRef.current && 
+          !attachMenuRef.current.contains(e.target) && 
+          !e.target.closest('.attach-btn')) {
+        setShowAttachMenu(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [profileMenuOpen]);
+  }, [profileMenuOpen, showAttachMenu]);
 
   useEffect(() => {
     if (showModelOptions) {
@@ -1246,6 +1255,21 @@ function ChatInterface() {
   // Handle file attachment
   const handleFileAttach = () => {
     fileInputRef.current?.click();
+    setShowAttachMenu(false); // Close menu after selecting
+  };
+
+  const handleDeepResearch = () => {
+    // Placeholder for deep research functionality
+    console.log("Deep research feature - coming soon!");
+    setShowAttachMenu(false);
+    // TODO: Implement deep research feature
+  };
+
+  const handleCreateImage = () => {
+    // Placeholder for create image functionality
+    console.log("Create image feature - coming soon!");
+    setShowAttachMenu(false);
+    // TODO: Implement image generation feature
   };
 
   const handleFileChange = (e) => {
@@ -1859,14 +1883,46 @@ function ChatInterface() {
               style={{ display: 'none' }}
             />
             
-            {/* Plus button for file attachment */}
-            <button 
-              className="attach-btn" 
-              onClick={handleFileAttach}
-              title="Attach file or image"
-            >
-              +
-            </button>
+            {/* Plus button for attach menu */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                className="attach-btn" 
+                onClick={() => setShowAttachMenu(!showAttachMenu)}
+                title="Add photos & files, deep research, or create image"
+              >
+                +
+              </button>
+              
+              {/* Attach dropdown menu */}
+              {showAttachMenu && (
+                <div ref={attachMenuRef} className="attach-menu">
+                  <button className="attach-menu-item" onClick={handleFileAttach}>
+                    <span className="attach-menu-icon">
+                      <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor">
+                        <path d="M396.2 83.8c-24.4-24.4-64-24.4-88.4 0l-184 184c-42.1 42.1-42.1 110.3 0 152.4s110.3 42.1 152.4 0l152-152c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-152 152c-64 64-167.6 64-231.6 0s-64-167.6 0-231.6l184-184c46.3-46.3 121.3-46.3 167.6 0s46.3 121.3 0 167.6l-176 176c-28.6 28.6-75 28.6-103.6 0s-28.6-75 0-103.6l144-144c10.9-10.9 28.7-10.9 39.6 0s10.9 28.7 0 39.6l-144 144c-6.7 6.7-6.7 17.7 0 24.4s17.7 6.7 24.4 0l176-176c24.4-24.4 24.4-64 0-88.4z"/>
+                      </svg>
+                    </span>
+                    <span>Add photos & files</span>
+                  </button>
+                  <button className="attach-menu-item" onClick={handleDeepResearch}>
+                    <span className="attach-menu-icon">
+                      <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor">
+                        <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/>
+                      </svg>
+                    </span>
+                    <span>Deep research</span>
+                  </button>
+                  <button className="attach-menu-item" onClick={handleCreateImage}>
+                    <span className="attach-menu-icon">
+                      <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor">
+                        <path d="M0 96C0 60.7 28.7 32 64 32H448c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM323.8 202.5c-4.5-6.6-11.9-10.5-19.8-10.5s-15.4 3.9-19.8 10.5l-87 127.6L170.7 297c-4.6-5.7-11.5-9-18.7-9s-14.2 3.3-18.7 9l-64 80c-5.8 7.2-6.9 17.1-2.9 25.4s12.4 13.6 21.6 13.6h96 32H424c8.9 0 17.1-4.9 21.2-12.8s3.6-17.4-1.4-24.7l-120-176zM112 192a48 48 0 1 0 0-96 48 48 0 1 0 0 96z"/>
+                      </svg>
+                    </span>
+                    <span>Create image</span>
+                  </button>
+                </div>
+              )}
+            </div>
             
             <textarea
               ref={textareaRef} 
