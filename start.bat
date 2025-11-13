@@ -1,6 +1,6 @@
 @echo off
 echo Starting Full Stack Application...
-cd /d "C:\Users\amank\OneDrive\Desktop\projects\swe-agent-project\backend"
+cd /d "C:\Users\amank\OneDrive\Desktop\projects\Swe-agent\backend"
 start node server.js
-cd /d "C:\Users\amank\OneDrive\Desktop\projects\swe-agent-project\my-react-app"
+cd /d "C:\Users\amank\OneDrive\Desktop\projects\Swe-agent\my-react-app"
 npm run dev

@@ -223,7 +223,7 @@ function WordTypewriter({ text }) {
 
 // Simple Markdown renderer for plaintext responses
 function MarkdownText({ text, isError = false }) {
-  // If it's an error, use red color for everything, otherwise use normal colors
+
   const textColor = isError ? '#ff6b6b' : '#e3e3e3';
   const headerColor = isError ? '#ff6b6b' : '#4EC9B0';
   const bulletColor = isError ? '#ff6b6b' : '#569CD6';
@@ -628,6 +628,7 @@ function ChatInterface() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false); // Track if profile menu is open
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false); // Track if logout confirmation is open
   const [newMessageIds, setNewMessageIds] = useState(new Set()); // Track new messages for animation
+  const [userHasScrolledUp, setUserHasScrolledUp] = useState(false); // Track if user manually scrolled up
   const [attachedFiles, setAttachedFiles] = useState([]); // Track attached files/images
   const fileInputRef = useRef(null); // Reference to hidden file input
   const [showAttachMenu, setShowAttachMenu] = useState(false); // Track attach menu visibility
@@ -702,8 +703,7 @@ function ChatInterface() {
     }
   };
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
+  useEffect(() => {   const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
       requestAnimationFrame(() => {
@@ -712,11 +712,12 @@ function ChatInterface() {
     }
   }, [inputValue]);
 
-  useEffect(() => {
-    if (chatScrollAreaRef.current) {
-      chatScrollAreaRef.current.scrollTop = chatScrollAreaRef.current.scrollHeight;
-    }
-  }, [messages, loading]);
+  // Removed old auto-scroll effect - now handled by the scroll detection effect below
+  // useEffect(() => {
+  //   if (chatScrollAreaRef.current) {
+  //     chatScrollAreaRef.current.scrollTop = chatScrollAreaRef.current.scrollHeight;
+  //   }
+  // }, [messages, loading]);
 
   useEffect(() => {
     const handleHover = (e) => {
@@ -840,20 +841,43 @@ function ChatInterface() {
     }
   }, [messages]);
 
+  // Detect when user manually scrolls up
+  useEffect(() => {
+    const chatArea = chatScrollAreaRef.current;
+    if (!chatArea) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatArea;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // If user is more than 100px from bottom, they've scrolled up
+      if (distanceFromBottom > 100) {
+        setUserHasScrolledUp(true);
+      } else {
+        setUserHasScrolledUp(false);
+      }
+    };
+
+    chatArea.addEventListener('scroll', handleScroll);
+    return () => chatArea.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Auto-scroll to bottom when messages change or during loading/streaming
   useEffect(() => {
     const scrollToBottom = () => {
-      if (messagesEndRef.current) {
+      if (messagesEndRef.current && !userHasScrolledUp) {
         messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
       }
     };
 
-    // Immediate scroll
-    scrollToBottom();
-
-    // Continue scrolling if loading (during streaming)
-    let intervalId;
+    // Only do immediate scroll if we're loading or animating (not on every message change)
     if (loading || newMessageIds.size > 0) {
+      scrollToBottom();
+    }
+
+    // Continue scrolling if loading (during streaming) but respect user scroll
+    let intervalId;
+    if ((loading || newMessageIds.size > 0) && !userHasScrolledUp) {
       intervalId = setInterval(scrollToBottom, 50); // Scroll every 50ms during streaming
     }
 
@@ -862,7 +886,7 @@ function ChatInterface() {
         clearInterval(intervalId);
       }
     };
-  }, [messages, loading, newMessageIds]);
+  }, [messages, loading, newMessageIds, userHasScrolledUp]);
 
   
   useEffect(() => {
@@ -1167,6 +1191,7 @@ function ChatInterface() {
   const sendMessage = async () => {
     if (inputValue.trim()) {
       setChatBarPosition("bottom");
+      setUserHasScrolledUp(false); // Reset scroll position when sending new message
       addMessage(inputValue, "user"); // Add user message immediately
       setInputValue(""); // Clear input field
       setLoading(true); // Show loading indicator
