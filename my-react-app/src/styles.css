@@ -488,7 +488,7 @@ body {
 
 .message.assistant .copy-btn {
   position: absolute;
-  top: 8px;
+  top: -8px;
   right: 8px;
   background: var(--button-bg, #353434);
   border: none;
@@ -1668,10 +1668,9 @@ body {
   transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-/* Hide buttons when sidebar is open */
+/* Keep buttons visible when sidebar is open */
 .main-content.sidebar-open .top-buttons-wrapper {
-  opacity: 0;
-  visibility: hidden;
+  left: 25px; /* Move buttons to the right when sidebar is open */
 }
 
 .sidebar-toggle {
@@ -1679,7 +1678,7 @@ body {
   border: none;
   outline: none;
   border-radius: 50px;
-  padding: 8px 12px;
+  padding: 7px 11px;
   cursor: pointer;
   display: flex;
   align-items: center;
