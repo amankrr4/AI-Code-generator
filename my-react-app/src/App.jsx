@@ -1761,8 +1761,8 @@ function ChatInterface() {
                   <p style={{ 
                     marginBottom: '8px', 
                     marginLeft: '12px',
-                    color: '#d4d4d4', 
-                    fontSize: '14px', 
+                    color: '#e3e3e3', 
+                    fontSize: '15px', 
                     lineHeight: '1.6',
                     fontWeight: '400'
                   }}>

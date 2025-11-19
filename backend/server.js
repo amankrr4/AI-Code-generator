@@ -14,9 +14,9 @@ const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
 const isProduction = process.env.NODE_ENV === 'production';
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
-console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
+console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+console.log(`Frontend URL: ${FRONTEND_URL}`);
+console.log(`Ollama URL: ${OLLAMA_URL}`);
 
 app.use(
     cors({
@@ -30,7 +30,7 @@ app.use(express.json());
 app.post("/api/check-ollama", async (req, res) => {
     const { model } = req.body;
     if (!model) {
-        return res.status(400).json({ response: "⚠️ Model is required", language: "plaintext" });
+        return res.status(400).json({ response: " Model is required", language: "plaintext" });
     }
 
     try {
@@ -42,7 +42,7 @@ app.post("/api/check-ollama", async (req, res) => {
 
         if (response.status === 404) {
             return res.status(404).json({
-                response: `⚠️ Model '${model}' not found`,
+                response: ` Model '${model}' not found`,
                 language: "plaintext",
             });
         }
@@ -50,11 +50,11 @@ app.post("/api/check-ollama", async (req, res) => {
             throw new Error(`Ollama not reachable (status ${response.status})`);
         }
 
-        res.json({ response: "✅ Ollama model available", language: "plaintext" });
+        res.json({ response: " Ollama model available", language: "plaintext" });
     } catch (error) {
         console.error("Ollama check failed:", error.message);
         res.status(500).json({
-            response: `⚠️ Ollama check failed: ${error.message}`,
+            response: ` Ollama check failed: ${error.message}`,
             language: "plaintext",
         });
     }
@@ -66,12 +66,12 @@ app.post("/api/chat", async (req, res) => {
 
     if (!prompt || !model) {
         return res.status(400).json({
-            response: "⚠️ Prompt and model are required",
+            response: " Prompt and model are required",
             language: "plaintext",
         });
     }
 
-    console.log("➡️ Chat request received. Model:", model);
+    console.log(" Chat request received. Model:", model);
 
     try {
         
@@ -226,7 +226,7 @@ Your purpose is to help users think, code, reason, and create — with clarity, 
             const effectiveApiKey = apiKey || process.env.OPENAI_API_KEY;
             if (!effectiveApiKey) {
                 return res.status(400).json({
-                    response: "⚠️ API key required for GPT models. Please provide one or set OPENAI_API_KEY environment variable.",
+                    response: " API key required for GPT models. Please provide one or set OPENAI_API_KEY environment variable.",
                     language: "plaintext",
                 });
             }
@@ -265,7 +265,7 @@ Your purpose is to help users think, code, reason, and create — with clarity, 
             const effectiveApiKey = apiKey || process.env.CLAUDE_API_KEY;
             if (!effectiveApiKey) {
                 return res.status(400).json({
-                    response: "⚠️ API key required for Claude. Please provide one or set CLAUDE_API_KEY environment variable.",
+                    response: " API key required for Claude. Please provide one or set CLAUDE_API_KEY environment variable.",
                     language: "plaintext",
                 });
             }
@@ -466,7 +466,7 @@ Your purpose is to help users think, code, reason, and create — with clarity, 
         }
 
         res.status(500).json({
-            response: `⚠️ ${errorMessage}`,
+            response: `${errorMessage}`,
             language: "plaintext",
         });
     }
@@ -509,9 +509,9 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Backend running on http://localhost:${PORT}`);
-    console.log(`🌍 Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
-    console.log(`🔗 Frontend URL: ${FRONTEND_URL}`);
-    console.log(`🤖 Ollama URL: ${OLLAMA_URL}`);
-    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+    console.log(`Backend running on http://localhost:${PORT}`);
+    console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+    console.log(`Frontend URL: ${FRONTEND_URL}`);
+    console.log(`Ollama URL: ${OLLAMA_URL}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
 });
