@@ -537,7 +537,6 @@ body {
 
 .message.assistant:hover {
   background: var(--hover-bg);
-  transform: scale(1.03);
   transition-duration: 0.4s;
 }
 
@@ -563,7 +562,6 @@ body {
 }
 
 .input-wrapper:hover {
-  transform: scale(1.05);
   border-color: var(--accent);
 }
 

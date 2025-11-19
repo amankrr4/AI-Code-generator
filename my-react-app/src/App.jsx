@@ -719,17 +719,18 @@ function ChatInterface() {
   //   }
   // }, [messages, loading]);
 
-  useEffect(() => {
-    const handleHover = (e) => {
-      // Don't respond to hover events if the logout confirmation dialog is open
-      if (!showLogoutConfirmation) {
-        if (e.clientX <= 10) setSidebarOpen(true);
-        else if (sidebarOpen && e.clientX > 240) setSidebarOpen(false);
-      }
-    };
-    window.addEventListener("mousemove", handleHover);
-    return () => window.removeEventListener("mousemove", handleHover);
-  }, [sidebarOpen, showLogoutConfirmation]);
+  // Removed hover effect to open sidebar - now only opens via button click
+  // useEffect(() => {
+  //   const handleHover = (e) => {
+  //     // Don't respond to hover events if the logout confirmation dialog is open
+  //     if (!showLogoutConfirmation) {
+  //       if (e.clientX <= 10) setSidebarOpen(true);
+  //       else if (sidebarOpen && e.clientX > 240) setSidebarOpen(false);
+  //     }
+  //   };
+  //   window.addEventListener("mousemove", handleHover);
+  //   return () => window.removeEventListener("mousemove", handleHover);
+  // }, [sidebarOpen, showLogoutConfirmation]);
 
   // Reset openMenuId and profileMenuOpen when sidebar closes
   useEffect(() => {
