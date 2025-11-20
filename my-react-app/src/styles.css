@@ -692,8 +692,8 @@ body {
   gap: 8px;
   padding: 12px 16px 8px 16px;
   flex-wrap: wrap;
-  background: #1a1a1a;
-  border-top: 1px solid #2d2d2d;
+  background: transparent;
+  border-top: none;
 }
 
 .attachment-item {
