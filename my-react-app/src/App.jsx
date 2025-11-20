@@ -1577,7 +1577,7 @@ function ChatInterface() {
                   className="menu-toggle-btn"
                   onClick={(e) => toggleMenu(session.id, e)}
                 >
-                                                                                                                        •••
+                                                                                                                        ••• 
                 </button>
                 {openMenuId === session.id && (
                   <div className="session-menu">
